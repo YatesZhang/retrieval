@@ -1,0 +1,14 @@
+
+git教程:
+  git init
+  git add README.md
+  git commit -m "first commit"
+  git branch -M main
+  git remote add origin https://github.com/YatesZhang/retrieval.git
+  git push -u origin main
+
+tmux后台：
+  tmux ls
+  tmux new -s fastrcnn 
+  tmux attach -t fastrcnn
+  tmux kill-session -t fastrcnn
