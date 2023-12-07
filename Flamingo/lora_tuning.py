@@ -81,7 +81,7 @@ def create_model_and_transforms(
     tuning_config = dict(
         r=16,
         lora_alpha=16,
-        lora_target_modules=lora_target_modules,
+        target_modules=lora_target_modules,
         lora_dropout=0.0,
         bias="none",
         modules_to_save=[],
