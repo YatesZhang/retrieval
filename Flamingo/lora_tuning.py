@@ -8,6 +8,8 @@ from open_flamingo.src.flamingo_lm import FlamingoLMMixin
 from open_flamingo.src.utils import extend_instance
 from bigmodelvis import Visualization
 
+import pdb 
+
 def create_model_and_transforms(
     clip_vision_encoder_path: str,
     clip_vision_encoder_pretrained: str,
@@ -69,32 +71,7 @@ def create_model_and_transforms(
         trust_remote_code=True,
         cache_dir=cache_dir,
     )
-    # --------------------------------------------------------------------------
-    from peft import LoraConfig, get_peft_model
-    lora_target_modules=["Wqkv", "out_proj", 
-                            "to_q", "to_kv", "to_out",
-                            "ff.1", "ff.3"],
-    # Lora for LLaMa:
-    # lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj", 
-    #                         "to_q", "to_kv", "to_out",
-    #                         "ff.1", "ff.3"],
-    tuning_config = dict(
-        r=16,
-        lora_alpha=16,
-        target_modules=lora_target_modules,
-        lora_dropout=0.0,
-        bias="none",
-        modules_to_save=[],
-        task_type="VL",
-    )
-    tuning_config = LoraConfig(
-        **tuning_config
-    )
-    lang_encoder = get_peft_model(lang_encoder, peft_config=tuning_config)
-    # vis model: 
-    Visualization(lang_encoder).structure_graph()
-    lang_encoder.print_trainable_parameters()
-    # --------------------------------------------------------------------------
+
     # hacks for MPT-1B, which doesn't have a get_input_embeddings method
     if "mpt-1b-redpajama-200b" in lang_encoder_path:
 
@@ -126,6 +103,34 @@ def create_model_and_transforms(
         cross_attn_every_n_layers=cross_attn_every_n_layers,
         **flamingo_kwargs,
     )
+
+    # --------------------------------------------------------------------------
+    from peft import LoraConfig, get_peft_model
+    lora_target_modules=["Wqkv", "out_proj", 
+                            "to_q", "to_kv", "to_out",
+                            "ff.1", "ff.3"]
+    # Lora for LLaMa:
+    # lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj", 
+    #                         "to_q", "to_kv", "to_out",
+    #                         "ff.1", "ff.3"],
+    tuning_config = dict(
+        r=16,
+        lora_alpha=16,
+        target_modules=lora_target_modules,
+        lora_dropout=0.0,
+        bias="none",
+        modules_to_save=[],
+        task_type="VL",
+    )
+    tuning_config = LoraConfig(
+        **tuning_config
+    )
+    # pdb.set_trace()
+    model = get_peft_model(model, peft_config=tuning_config)
+    # vis model: 
+    Visualization(lang_encoder).structure_graph()
+    model.print_trainable_parameters()
+    # --------------------------------------------------------------------------
 
     # Freeze all parameters
     model.requires_grad_(False)

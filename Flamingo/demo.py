@@ -1,7 +1,12 @@
 # grab model checkpoint from huggingface hub
 from huggingface_hub import hf_hub_download
 import torch
-from open_flamingo import create_model_and_transforms
+# from open_flamingo import create_model_and_transforms
+from lora_tuning import create_model_and_transforms
+from PIL import Image
+import requests
+import torch
+from transformers.tokenization_utils_base import BatchEncoding
 
 cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
 model, image_processor, tokenizer = create_model_and_transforms(
