@@ -19,11 +19,6 @@ model, image_processor, tokenizer = create_model_and_transforms(
     lora_tuning=True
 )
 
-# checkpoint_path = hf_hub_download("openflamingo/OpenFlamingo-3B-vitl-mpt1b", "checkpoint.pt", cache_dir=cache_dir)
-# checkpoint_path = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo/checkpoint.pt"
-# model.load_state_dict(torch.load(checkpoint_path), strict=False)
-
-
 """
 Step 1: Load images
 """
