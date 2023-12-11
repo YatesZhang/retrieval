@@ -23,8 +23,8 @@ from transformers import (
 from lora_tuning import create_model_and_transforms
 # from mmgpt.models.builder import create_toy_model_and_transforms
 from datasets import InfiniteSampler, build_dataset
-from distributed import init_distributed_device, world_info_from_env
-from train_utils import AverageMeter, get_autocast, get_cast_dtype, get_checkpoint
+from utils.distributed import init_distributed_device, world_info_from_env
+from utils.train_utils import AverageMeter, get_autocast, get_cast_dtype, get_checkpoint
 
 
 def random_seed(seed=42, rank=0):
