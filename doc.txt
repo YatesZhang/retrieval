@@ -1,4 +1,4 @@
-
+/cfsdata2/cfsdata/datasets/coco
 git教程:
   git init
   git add README.md
@@ -6,7 +6,11 @@ git教程:
   git branch -M main
   git remote add origin https://github.com/YatesZhang/retrieval.git
   git push -u origin main
-git remote set-url origin https://github.com/YatesZhang/retrieval.git
+
+force merge conflict:
+  git reset --hard FETCH_HEAD
+  git pull 
+  git remote set-url origin https://github.com/YatesZhang/retrieval.git
 
 ps -aux | grep <pid>
 tmux后台：
