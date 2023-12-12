@@ -4,3 +4,4 @@ cache_dir
 *.egg-info
 __pycache__
 .pyc 
+data

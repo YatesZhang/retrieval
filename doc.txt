@@ -19,6 +19,7 @@ tmux后台：
   tmux attach -t fastrcnn
   tmux kill-session -t fastrcnn
 
+scp -r /folder/on/my/host/ yunzhi@172.18.19.13:/folder/on/target/machine/
 
 LoRA tuning: 
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa

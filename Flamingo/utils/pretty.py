@@ -5,17 +5,26 @@ from termcolor import cprint
 from PIL import Image
 import numpy as np
 from typing import List, Optional
+from bigmodelvis import Visualization
+
+def vis_model(model):
+    """ 
+        model visualization
+    """
+    Visualization(model).structure_graph()
+    return 
 
 
 def imread(path):
     """ 
-        读取图片
+        load image
     """
     return np.array(Image.open(path))
 
+
 def pretty_print(*data_list, color="yellow"):
     """ 
-        漂亮的打印
+        pretty print
     """
     for data in data_list:  
         if isinstance(data, str):

@@ -2,7 +2,7 @@
 from huggingface_hub import hf_hub_download
 import torch
 # from open_flamingo import create_model_and_transforms
-from lora_tuning import create_model_and_transforms
+from Flamingo.lora_tuning import create_model_and_transforms
 from PIL import Image
 import requests
 import torch
