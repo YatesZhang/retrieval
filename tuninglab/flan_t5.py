@@ -24,7 +24,8 @@ import torch
 from transformers import AutoModelForSeq2SeqLM
 import os 
 import os.path as osp 
-from Flamingo.utils.pretty import pretty_print
+from Flamingo.utils.pretty import pretty_print, vis_model
+import traceback
 # Load dataset from the hub
 # Train dataset size: 14732
 # Test dataset size: 819
@@ -40,7 +41,7 @@ print(f"Test dataset size: {len(dataset['test'])}")
 print("model_id: ", model_id)
 # Load tokenizer of FLAN-t5-XL
 tokenizer = AutoTokenizer.from_pretrained(model_id)
-print("tokenizer: \n", tokenizer)
+# print("tokenizer: \n", tokenizer)
 
 # The maximum total input sequence length after tokenization.
 # Sequences longer than this will be truncated, sequences shorter will be padded.
@@ -92,11 +93,20 @@ tokenized_dataset["train"].save_to_disk("data/train")
 tokenized_dataset["test"].save_to_disk("data/eval")
 
 pretty_print(f"start load FP16 model from: {save_directory}")
-if not osp.exists(save_directory ):
+try: 
+    model = AutoModelForSeq2SeqLM.from_pretrained(save_directory,
+                                                   load_in_8bit=True,
+                                                     device_map="auto")
+except OSError:
+# except Exception as e:
+#     traceback.print_exc()
     model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
     model = model.half()
-    model.save_pretrained(save_directory )
+    model.save_pretrained(save_directory)
     # torch.save(model.state_dict(), checkpoint)
     print("model saved !")
-else:
-    model = AutoModelForSeq2SeqLM.from_pretrained(save_directory, load_in_8bit=True, device_map="auto")
+vis_model(model)
+pretty_print("\n -----------------------------------\n 8 bit weight:  \n", color="green")
+pretty_print("model.encoder.block[0].layer[0].SelfAttention.q.weight", color="green")
+print(model.encoder.block[0].layer[0].SelfAttention.q.weight)
+pdb.set_trace()
