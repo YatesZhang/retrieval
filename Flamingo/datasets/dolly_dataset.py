@@ -3,7 +3,6 @@ import json
 
 import numpy as np
 from torch.utils.data import Dataset
-from transformers import LlamaTokenizer
 
 TEMPLATE = {
     "description": "Template used by LLM.",
@@ -41,7 +40,7 @@ class DollyDataset(Dataset):
         ann_path (string): directory to store the annotation file
         """
         assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
-        self.tokenizer: LlamaTokenizer = tokenizer
+        self.tokenizer = tokenizer
 
         self.annotation = []
         self.prompter = LMPrompter()

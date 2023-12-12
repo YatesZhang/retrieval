@@ -1,6 +1,6 @@
 import json
 
-from mmgpt.datasets.dolly_dataset import DollyDataset
+from Flamingo.datasets.dolly_dataset import DollyDataset
 
 
 TEMPLATE = {

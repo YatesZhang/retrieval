@@ -11,7 +11,6 @@ import random
 
 import numpy as np
 from PIL import Image
-from transformers import LlamaTokenizer
 
 from .vqa_dataset import VQADataset
 
@@ -80,7 +79,7 @@ class COCOCaptionDataset(VQADataset):
         vis_root (string): Root directory of images (e.g. coco/images/)
         ann_root (string): directory to store the annotation file
         """
-        self.tokenizer: LlamaTokenizer = tokenizer
+        self.tokenizer = tokenizer
         self.vis_root = vis_root
 
         self.annotation = []

@@ -4,7 +4,7 @@ import random
 
 import numpy as np
 from PIL import Image
-from transformers import LlamaTokenizer
+
 
 from .vqa_dataset import VQADataset, VQAPrompter
 
@@ -18,7 +18,7 @@ class TextOCRDataset(VQADataset):
         ann_root (string): directory to store the annotation file
         """
         assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
-        self.tokenizer: LlamaTokenizer = tokenizer
+        self.tokenizer = tokenizer
         self.vis_root = vis_root
 
         self.annotation = []
