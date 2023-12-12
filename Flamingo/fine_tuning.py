@@ -20,11 +20,13 @@ from transformers import (
     get_linear_schedule_with_warmup,
 )
 
-from lora_tuning import create_model_and_transforms
+from Flamingo.lora_tuning import create_model_and_transforms
 # from mmgpt.models.builder import create_toy_model_and_transforms
-from datasets import InfiniteSampler, build_dataset
-from utils.distributed import init_distributed_device, world_info_from_env
-from utils.train_utils import AverageMeter, get_autocast, get_cast_dtype, get_checkpoint
+from Flamingo.datasets import InfiniteSampler, build_dataset
+from Flamingo.utils.distributed import init_distributed_device, world_info_from_env
+from Flamingo.utils.train_utils import AverageMeter, get_autocast, get_cast_dtype, get_checkpoint
+from Flamingo.config.baseline import dataset_config, model_config
+from Flamingo.utils.pretty import pretty_print 
 
 
 def random_seed(seed=42, rank=0):
@@ -157,23 +159,11 @@ def main():
         raise ValueError("tuning_config must be specified")
 
     model, image_processor, tokenizer = create_model_and_transforms(
-        model_name="open_flamingo",
-        clip_vision_encoder_path=args.vision_encoder_path,
-        clip_vision_encoder_pretrained=args.vision_encoder_pretrained,
-        lang_encoder_path=args.lm_path,
-        tokenizer_path=args.tokenizer_path if args.tokenizer_path else args.lm_path,
-        use_media_placement_augmentation=args.use_media_placement_augmentation,
-        pretrained_model_path=args.pretrained_path,
-        tuning_config=tuning_config.tuning_config,
+        **model_config
     )
 
-    if args.dataset_config is not None:
-        dataset_config = Config.fromfile(args.dataset_config)
-    else:
-        raise ValueError("dataset_config must be specified")
-
     dataset = build_dataset(
-        dataset_config=dataset_config.visual_datasets,
+        dataset_config=dataset_config,
         vis_processor=image_processor,
         tokenizer=tokenizer,
     )

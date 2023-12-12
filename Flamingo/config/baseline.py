@@ -9,5 +9,8 @@ model_config = dict(
 )
 
 dataset_config = dict(
-
+    type="aokvqa",
+    vis_root="data/coco/images",
+    ann_paths=["data/aokvqa/annotations/aokvqa_v1p0_train.json"],
+    sample_image=False,
 )

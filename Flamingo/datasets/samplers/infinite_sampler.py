@@ -3,7 +3,7 @@ import itertools
 import torch
 from torch.utils.data.sampler import Sampler
 
-from mmgpt.train.distributed import world_info_from_env
+from Flamingo.utils.distributed import world_info_from_env
 
 
 class InfiniteSampler(Sampler):
