@@ -26,6 +26,9 @@ import os
 import os.path as osp 
 from Flamingo.utils.pretty import pretty_print, vis_model
 import traceback
+from peft import LoraConfig, get_peft_model, prepare_model_for_int8_training, TaskType
+
+
 # Load dataset from the hub
 # Train dataset size: 14732
 # Test dataset size: 819
@@ -92,6 +95,8 @@ print(f"Keys of tokenized dataset: {list(tokenized_dataset['train'].features)}")
 tokenized_dataset["train"].save_to_disk("data/train")
 tokenized_dataset["test"].save_to_disk("data/eval")
 
+
+# Load model as int8:
 pretty_print(f"start load FP16 model from: {save_directory}")
 try: 
     model = AutoModelForSeq2SeqLM.from_pretrained(save_directory,
@@ -105,8 +110,27 @@ except OSError:
     model.save_pretrained(save_directory)
     # torch.save(model.state_dict(), checkpoint)
     print("model saved !")
-vis_model(model)
+
+# Define LoRA Config
+lora_config = LoraConfig(
+ r=16,
+ lora_alpha=32,
+ target_modules=["q", "v"],
+ lora_dropout=0.05,
+ bias="none",
+ task_type=TaskType.SEQ_2_SEQ_LM
+)
+# prepare int-8 model for training
+model = prepare_model_for_int8_training(model)
+
+# add LoRA adaptor
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()
 pretty_print("\n -----------------------------------\n 8 bit weight:  \n", color="green")
 pretty_print("model.encoder.block[0].layer[0].SelfAttention.q.weight", color="green")
 print(model.encoder.block[0].layer[0].SelfAttention.q.weight)
+pretty_print("\n -----------------------------------\n 32 bit LoRA weight:  \n", color="green")
+pretty_print("model.encoder.block[0].layer[0].SelfAttention.q.weight", color="green")
+print(model.encoder.block[0].layer[0].SelfAttention.q.lora_A['default'].weight)
+vis_model(model)
 pdb.set_trace()
