@@ -1,3 +1,6 @@
 __*__
 work_dir
 cache_dir
+*.egg-info
+__pycache__
+.pyc 
