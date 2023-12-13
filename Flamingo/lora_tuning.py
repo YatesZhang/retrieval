@@ -21,6 +21,7 @@ def create_model_and_transforms(
     freeze_lm_embeddings: bool = False,
     cache_dir: Optional[str] = None,
     lora_tuning=False,
+    add_eos_token=True,
     **flamingo_kwargs,
 ):
     """
@@ -172,8 +173,8 @@ def create_model_and_transforms(
     Visualization(lang_encoder).structure_graph()
     
     # --------------------------------------------------------------------------
-
-
+    if not add_eos_token:
+        text_tokenizer.eos_token = None
 
     # Unfreeze perceiver, gated_cross_attn_layers, and LM input embeddings
     # model.perceiver.requires_grad_(True)

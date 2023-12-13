@@ -11,7 +11,7 @@ import numpy as np
 import torch
 import wandb
 from mmengine import Config
-from torch.nn.parallel import DistributedDataParallel as DDP
+# from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader, DistributedSampler
 from tqdm import tqdm
 from transformers import (
@@ -88,67 +88,67 @@ def main():
     # Finetune config
     parser.add_argument("--tuning_config", type=str, default=None, help="path to tuning config file")
     # distributed training args
-    parser.add_argument(
-        "--dist-url",
-        default="env://",
-        type=str,
-        help="url used to set up distributed training",
-    )
-    parser.add_argument("--dist-backend", default="nccl", type=str, help="distributed backend")
-    parser.add_argument(
-        "--horovod",
-        default=False,
-        action="store_true",
-        help="Use horovod for distributed training.",
-    )
-    parser.add_argument(
-        "--no-set-device-rank",
-        default=False,
-        action="store_true",
-        help="Don't set device index from local rank (when CUDA_VISIBLE_DEVICES restricted to one per proc).",
-    )
-    # wandb args
-    parser.add_argument("--report_to_wandb", default=False, action="store_true")
-    parser.add_argument(
-        "--wandb_project",
-        type=str,
-        default="wandb project"
-    )
-    parser.add_argument(
-        "--wandb_entity",
-        type=str,
-        default="None"
-    )
-    parser.add_argument(
-        "--save_checkpoints_to_wandb",
-        default=False,
-        action="store_true",
-        help="save checkpoints to wandb",
-    )
+    # parser.add_argument(
+    #     "--dist-url",
+    #     default="env://",
+    #     type=str,
+    #     help="url used to set up distributed training",
+    # )
+    # parser.add_argument("--dist-backend", default="nccl", type=str, help="distributed backend")
+    # parser.add_argument(
+    #     "--horovod",
+    #     default=False,
+    #     action="store_true",
+    #     help="Use horovod for distributed training.",
+    # )
+    # parser.add_argument(
+    #     "--no-set-device-rank",
+    #     default=False,
+    #     action="store_true",
+    #     help="Don't set device index from local rank (when CUDA_VISIBLE_DEVICES restricted to one per proc).",
+    # )
+    # # wandb args
+    # parser.add_argument("--report_to_wandb", default=False, action="store_true")
+    # parser.add_argument(
+    #     "--wandb_project",
+    #     type=str,
+    #     default="wandb project"
+    # )
+    # parser.add_argument(
+    #     "--wandb_entity",
+    #     type=str,
+    #     default="None"
+    # )
+    # parser.add_argument(
+    #     "--save_checkpoints_to_wandb",
+    #     default=False,
+    #     action="store_true",
+    #     help="save checkpoints to wandb",
+    # )
 
     args = parser.parse_args()
-
-    if args.save_checkpoints_to_wandb and not args.report_to_wandb:
-        raise ValueError("save_checkpoints_to_wandb requires report_to_wandb")
+    args.rank = 0
+    # if args.save_checkpoints_to_wandb and not args.report_to_wandb:
+    #     raise ValueError("save_checkpoints_to_wandb requires report_to_wandb")
 
     if args.offline:
         os.environ["WANDB_MODE"] = "offline"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-    args.local_rank, args.rank, args.world_size = world_info_from_env()
+    # args.local_rank, args.rank, args.world_size = world_info_from_env()
 
-    if args.rank == 0:
-        if not os.path.exists(args.run_name):
-            os.makedirs(args.run_name)
+    # if args.rank == 0:
+    #     if not os.path.exists(args.run_name):
+    #         os.makedirs(args.run_name)
 
-    device_id = init_distributed_device(args)
+    # device_id = init_distributed_device(args)
 
     random_seed(args.seed)
 
-    if args.tuning_config is not None:
-        tuning_config = Config.fromfile(args.tuning_config)
-    else:
-        raise ValueError("tuning_config must be specified")
+    # if args.tuning_config is not None:
+    #     tuning_config = Config.fromfile(args.tuning_config)
+    # else:
+    #     raise ValueError("tuning_config must be specified")
 
     model, image_processor, tokenizer = create_model_and_transforms(
         **model_config
@@ -163,7 +163,7 @@ def main():
         dataset,
         batch_size=args.batch_size,
         num_workers=args.workers,
-        sampler=DistributedSampler(dataset, shuffle=True, drop_last=True),
+        # sampler=DistributedSampler(dataset, shuffle=True, drop_last=True),
         collate_fn=dataset.collater,
     )
 
@@ -184,22 +184,23 @@ def main():
     else:
         lang_dataloader = None
 
-    random_seed(args.seed, args.rank)
+    random_seed(args.seed)
 
-    print(f"Start running training on rank {args.rank}.")
+    print(f"Start running training on rank {0}.")
 
-    if args.rank == 0 and args.report_to_wandb:
-        wandb.init(
-            project=args.wandb_project,
-            entity=args.wandb_entity,
-            name=args.run_name,
-            config=vars(args),
-        )
+    # if args.rank == 0 and args.report_to_wandb:
+    #     wandb.init(
+    #         project=args.wandb_project,
+    #         entity=args.wandb_entity,
+    #         name=args.run_name,
+    #         config=vars(args),
+    #     )
 
-    device_id = args.rank % torch.cuda.device_count()
+    # device_id = args.rank % torch.cuda.device_count()
+    device_id = 0
     model = model.to(device_id)
 
-    ddp_model = DDP(model, device_ids=[device_id], find_unused_parameters=True)
+    ddp_model = model 
 
     def get_grouped_params(model):
         params_with_wd, params_without_wd = [], []
@@ -228,7 +229,7 @@ def main():
     optimizer = torch.optim.AdamW(get_grouped_params(ddp_model), lr=args.learning_rate)
 
     total_training_steps = len(train_dataloader) * args.num_epochs
-
+    
     if args.rank == 0:
         print(f"Total training steps: {total_training_steps}")
 
@@ -269,7 +270,7 @@ def main():
     ddp_model.train()
 
     for epoch in range(resume_from_epoch, args.num_epochs):
-        train_dataloader.sampler.set_epoch(epoch)
+        # train_dataloader.sampler.set_epoch(epoch)
 
         train_one_epoch(
             args=args,
@@ -293,7 +294,7 @@ def main():
                 "model_state_dict": get_checkpoint(ddp_model),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "lr_scheduler_state_dict": lr_scheduler.state_dict(),
-                "tuning_config": tuning_config,
+                # "tuning_config": tuning_config,
             }
 
             print(f"Saving checkpoint to {args.run_name}/checkpoint_{epoch}.pt")
@@ -306,7 +307,7 @@ def main():
                     os.remove(f"{args.run_name}/checkpoint_{epoch-1}.pt")
     if args.rank == 0:
         torch.save(
-            {"model_state_dict": get_checkpoint(ddp_model.module), "tuning_config": tuning_config},
+            {"model_state_dict": get_checkpoint(ddp_model.module)},
             f"{args.run_name}/final_weights.pt",
         )
         if args.report_to_wandb and args.save_checkpoints_to_wandb:
@@ -401,35 +402,35 @@ def train_one_epoch(
             step_time_m.update(time.time() - end)
             end = time.time()
 
-            if args.rank == 0 and args.report_to_wandb:
-                # compute within rank 0
-                samples_per_second = (
-                    args.gradient_accumulation_steps * args.batch_size * args.world_size / step_time_m.val
-                )
-                samples_per_second_per_gpu = args.gradient_accumulation_steps * args.batch_size / step_time_m.val
+            # if args.rank == 0 and args.report_to_wandb:
+            #     # compute within rank 0
+            #     samples_per_second = (
+            #         args.gradient_accumulation_steps * args.batch_size * args.world_size / step_time_m.val
+            #     )
+            #     samples_per_second_per_gpu = args.gradient_accumulation_steps * args.batch_size / step_time_m.val
 
-                wandb.log(
-                    {
-                        "data_time": data_time_m.avg,
-                        "step_time": step_time_m.avg,
-                        "samples_per_second": samples_per_second,
-                        "samples_per_second_per_gpu": samples_per_second_per_gpu,
-                        "lr": optimizer.param_groups[0]["lr"],
-                    },
-                    commit=False,
-                )
-                step_time_m.reset()
-                data_time_m.reset()
+            #     wandb.log(
+            #         {
+            #             "data_time": data_time_m.avg,
+            #             "step_time": step_time_m.avg,
+            #             "samples_per_second": samples_per_second,
+            #             "samples_per_second_per_gpu": samples_per_second_per_gpu,
+            #             "lr": optimizer.param_groups[0]["lr"],
+            #         },
+            #         commit=False,
+            #     )
+            #     step_time_m.reset()
+            #     data_time_m.reset()
 
-                loss_log = {
-                    "loss": loss.item(),
-                    "loss_vision": loss_vision.item(),
-                    "global_step": global_step,
-                }
-                if language_dataloader is not None:
-                    loss_log["loss_lang"] = lang_loss.item()
+            #     loss_log = {
+            #         "loss": loss.item(),
+            #         "loss_vision": loss_vision.item(),
+            #         "global_step": global_step,
+            #     }
+            #     if language_dataloader is not None:
+            #         loss_log["loss_lang"] = lang_loss.item()
 
-                wandb.log(loss_log, commit=True)
+            #     wandb.log(loss_log, commit=True)
 
         # Log loss to console
         if ((num_steps + 1) % args.logging_steps == 0) and args.rank == 0:

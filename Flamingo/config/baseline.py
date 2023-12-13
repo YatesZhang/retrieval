@@ -10,7 +10,7 @@ model_config = dict(
 
 dataset_config = dict(
     type="aokvqa",
-    vis_root="data/coco/images",
-    ann_paths=["data/aokvqa/annotations/aokvqa_v1p0_train.json"],
+    vis_root="/home/yunzhi/datasets/COCO/train2017",
+    ann_paths=["/home/yunzhi/datasets/aokvqa_v1p0/aokvqa_v1p0_train.json"],
     sample_image=False,
 )

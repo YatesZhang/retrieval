@@ -11,7 +11,7 @@ import os
 import random
 from collections import defaultdict
 from typing import Iterable
-
+import pdb 
 import numpy as np
 import torch
 from PIL import Image
@@ -56,7 +56,8 @@ class VQADataset(Dataset):
         vis_root (string): Root directory of images (e.g. coco/images/)
         ann_root (string): directory to store the annotation file
         """
-        assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
+        assert tokenizer.eos_token is None, "tokenizer should not add eos token by default"
+        # assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
         self.tokenizer = tokenizer
         self.vis_root = vis_root
 
@@ -138,6 +139,7 @@ class VQADataset(Dataset):
             res["input_ids"].append(self.tokenizer.eos_token_id)
             res["attention_mask"].append(1)
         labels = copy.deepcopy(res["input_ids"])
+        labels = [label for label in labels if label is not None]
         # ignore instruction_token
         if self.ignore_instruction:
             instruction_token = self.tokenizer(
@@ -150,6 +152,8 @@ class VQADataset(Dataset):
 
     def __getitem__(self, index):
         ann = self.annotation[index]
+        # import pdb 
+        # pdb.set_trace()
         image = self.process_image(ann)
         text = self.process_text(ann)
         res = self.tokenize(text)
@@ -182,13 +186,19 @@ class VQADataset(Dataset):
             else:
                 l = np.concatenate([remainder, l]).astype(np.int64)
             padded_labels.append(l)
-
-        padded_samples = self.tokenizer.pad(
-            {"input_ids": input_id_list, "attention_mask": attention_mask_list, "labels": padded_labels},
-            return_tensors="pt",
-            padding="longest",
-        )
-
+        print(input_id_list)
+        print(attention_mask_list)
+        print(padded_labels)
+        # pdb.set_trace()
+        try:
+            padded_samples = self.tokenizer(
+                {"input_ids": input_id_list, "attention_mask": attention_mask_list, "labels": padded_labels},
+                return_tensors="pt",
+                padding="longest",
+                truncation=True
+            )
+        except:
+            pdb.set_trace()
         labels = padded_samples["labels"]
         media_token_id = self.tokenizer("<image>", add_special_tokens=False)["input_ids"][-1]
         labels[labels == self.tokenizer.pad_token_id] = -100

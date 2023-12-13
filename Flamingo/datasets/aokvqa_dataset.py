@@ -1,6 +1,8 @@
 import random
 
 from .vqa_dataset import VQADataset
+import os 
+from PIL import Image
 
 REASON_QUESTIONS = [
     "Why?",
@@ -15,8 +17,24 @@ REASON_QUESTIONS = [
 
 class AOKVQADataset(VQADataset):
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, **kwargs):
+        tokenizer.eos_token = None
         super().__init__(tokenizer, vis_processor, vis_root, ann_paths, **kwargs)
 
+    def get_path(self, ann):
+        image_id = str(ann["image_id"])
+        while len(image_id) != 12:
+            image_id = "0" + image_id
+        image_id += ".jpg"
+        image_id = os.path.join(self.vis_root, image_id)
+        return image_id
+    
+    def process_image(self, ann):
+        image_path = self.get_path(ann)
+        image = Image.open(image_path).convert("RGB")
+
+        image = self.vis_processor(image)
+        return image
+    
     def process_text(self, ann):
         question = ann["question"]
         question = question + " " + random.choice(REASON_QUESTIONS)
