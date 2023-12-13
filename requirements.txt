@@ -1,0 +1,7 @@
+openflamingo
+datasets
+termcolor
+pdbpp
+py7zr
+peft
+bitsandbytes

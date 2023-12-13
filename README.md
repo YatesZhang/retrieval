@@ -1,3 +1,9 @@
+# Open Flamingo
+environment
+```
+conda env create -f environment.yml
+```
+
 ```python
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa
                    "to_q", "to_kv", "to_out",    # gate cross layer attention 

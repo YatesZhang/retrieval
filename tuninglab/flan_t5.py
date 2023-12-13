@@ -13,6 +13,21 @@ reference :
 
     requirements:
     py7zr
+    datasets
+    transformers
+    torch
+    peft
+    
+    run command: 
+        CUDA_VISIBLE_DEVICES=0 python flan_t5.py
+    ---------------------------------------------
+    enable_int8 = True
+    GPU Memory: 876MiB
+    time cost: 10 min/epoch
+    ---------------------------------------------
+    enable_int8 = False
+    train: epoch = 1
+    GPU Memory: 2104MiB
 """
 # import evaluate
 import pdb 
@@ -27,21 +42,22 @@ import os.path as osp
 from Flamingo.utils.pretty import pretty_print, vis_model
 import traceback
 from peft import LoraConfig, get_peft_model, prepare_model_for_int8_training, TaskType
-
+from transformers import DataCollatorForSeq2Seq
+from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments
 
 # Load dataset from the hub
 # Train dataset size: 14732
 # Test dataset size: 819
 model_id="google/flan-t5-small"
 save_directory = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flan-t5"
+work_dir = "/home/yunzhi/yunzhi/yunzhi/VLLM/retrieval/work_dir"
+enable_int8 = True
 
 dataset = load_dataset("samsum")
 print(f"Train dataset size: {len(dataset['train'])}")
 print(f"Test dataset size: {len(dataset['test'])}")
-
-
-
 print("model_id: ", model_id)
+
 # Load tokenizer of FLAN-t5-XL
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 # print("tokenizer: \n", tokenizer)
@@ -97,11 +113,18 @@ tokenized_dataset["test"].save_to_disk("data/eval")
 
 
 # Load model as int8:
-pretty_print(f"start load FP16 model from: {save_directory}")
-try: 
-    model = AutoModelForSeq2SeqLM.from_pretrained(save_directory,
-                                                   load_in_8bit=True,
-                                                     device_map="auto")
+
+try:
+    if enable_int8: 
+        pretty_print(f"start load FP16 model from: {save_directory} to int8")
+        model = AutoModelForSeq2SeqLM.from_pretrained(save_directory,
+                                                    load_in_8bit=enable_int8,
+                                                        device_map="auto")
+    else:
+        pretty_print(f"start load FP32 model from: {model_id}")
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
+    # if not enable_int8:
+    #     model = model.half
 except OSError:
 # except Exception as e:
 #     traceback.print_exc()
@@ -121,16 +144,76 @@ lora_config = LoraConfig(
  task_type=TaskType.SEQ_2_SEQ_LM
 )
 # prepare int-8 model for training
-model = prepare_model_for_int8_training(model)
-
+if enable_int8:
+    model = prepare_model_for_int8_training(model)
+# else:
+#     model = model.half()   please use: pytorch_lightning Automatic Mixed Precision，AMP
 # add LoRA adaptor
 model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()
-pretty_print("\n -----------------------------------\n 8 bit weight:  \n", color="green")
+
+weight_q = model.encoder.block[0].layer[0].SelfAttention.q.weight
+pretty_print("\n -----------------------------------\n {} pretraining weight:  \n".format(weight_q.dtype),
+              color="green")
 pretty_print("model.encoder.block[0].layer[0].SelfAttention.q.weight", color="green")
-print(model.encoder.block[0].layer[0].SelfAttention.q.weight)
-pretty_print("\n -----------------------------------\n 32 bit LoRA weight:  \n", color="green")
+print(weight_q)
+
+weight_lora = model.encoder.block[0].layer[0].SelfAttention.q.lora_A['default'].weight
+pretty_print("\n -----------------------------------\n {} LoRA weight:  \n".format(weight_lora.dtype),
+              color="green")
 pretty_print("model.encoder.block[0].layer[0].SelfAttention.q.weight", color="green")
-print(model.encoder.block[0].layer[0].SelfAttention.q.lora_A['default'].weight)
+print(weight_lora)
 vis_model(model)
-pdb.set_trace()
+# pdb.set_trace()
+
+# we want to ignore tokenizer pad token in the loss
+label_pad_token_id = -100
+# Data collator
+data_collator = DataCollatorForSeq2Seq(
+    tokenizer,
+    model=model,
+    label_pad_token_id=label_pad_token_id,
+    pad_to_multiple_of=8
+)
+
+# Define training args
+training_args = Seq2SeqTrainingArguments(
+    output_dir=work_dir,
+	auto_find_batch_size=True,
+    learning_rate=1e-3, # higher learning rate
+    num_train_epochs=1,
+    logging_dir="{}/logs".format(work_dir),
+    logging_strategy="steps",
+    logging_steps=50,
+    save_strategy="no",
+    # report_to="tensorboard",
+)
+
+# Create Trainer instance
+trainer = Seq2SeqTrainer(
+    model=model,
+    args=training_args,
+    data_collator=data_collator,
+    train_dataset=tokenized_dataset["train"],
+)
+model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
+""" 
+Let's now train our model and run the cells below.
+Note that for T5, some layers are kept in float32 for stability purposes
+"""
+# train model
+trainer.train()
+
+# Save our LoRA model & tokenizer results
+if enable_int8:
+    peft_model_id="int8flan-t5-small-fp16LoRA"
+else:
+    peft_model_id="fp32flan-t5-small-fp32LoRA"
+peft_model_id = osp.join(work_dir, peft_model_id)
+trainer.model.save_pretrained(peft_model_id)
+tokenizer.save_pretrained(peft_model_id)
+pretty_print("Save pretrained model: {}".format(peft_model_id))
+# if you want to save the base model to call
+# trainer.model.base_model.save_pretrained(peft_model_id)
+
+
