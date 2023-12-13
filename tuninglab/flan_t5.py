@@ -10,13 +10,6 @@ reference :
 
     3) tuning: 
         - https://zhuanlan.zhihu.com/p/637717693
-
-    requirements:
-    py7zr
-    datasets
-    transformers
-    torch
-    peft
     
     run command: 
         CUDA_VISIBLE_DEVICES=0 python flan_t5.py

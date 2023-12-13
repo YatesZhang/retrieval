@@ -1,9 +1,19 @@
 # Open Flamingo
-environment
+## environment
 ```
 conda env create -f environment.yml
 ```
-
+## fine tuning demo on flan-t5-small
+- 使用int8和fp16混合精度训练flan-t5-small
+- 使用bitsandbytes库进行混合精度训练时，对int8自动反量化有额外时间开销使训练时间变长
+```bash
+cd tuninglab
+CUDA_VISIBLE_DEVICES=0 python flan_t5.py
+```
+|config|GPU cost| Time cost|
+|-|-|-|
+| enable_int8 = True|876MiB| 10min54s/epoch|
+| enable_int8 = False|2104MiB| 3min36s/epoch|
 ```python
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa
                    "to_q", "to_kv", "to_out",    # gate cross layer attention 
