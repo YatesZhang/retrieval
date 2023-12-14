@@ -14,6 +14,28 @@ CUDA_VISIBLE_DEVICES=0 python flan_t5.py
 |-|-|-|
 | enable_int8 = True|876MiB| 10min54s/epoch|
 | enable_int8 = False|2104MiB| 3min36s/epoch|
+## train on single GPU 
+```bash
+CUDA_VISIVLE_DEVICES=0 torchrun \
+--nproc_per_node=1 \
+--nnodes=1 \
+fine_tuning.py \
+  --run_name exp_1 \
+  --learning_rate 1e-5 \
+  --lr_scheduler cosine \
+  --workers 1 \
+  --batch_size 1 \ 
+```
+
+```bash
+cd tuninglab
+python flamingo.py \
+  --run_name exp_1 \
+  --learning_rate 1e-5 \
+  --lr_scheduler cosine \
+  --workers 1 \
+  --batch_size 1 \ 
+```
 ```python
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa
                    "to_q", "to_kv", "to_out",    # gate cross layer attention 

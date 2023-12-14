@@ -7,3 +7,4 @@ __pycache__
 data
 wandb
 int8flan-t5-small-fp16LoRA
+train-my-gpt4

@@ -1,4 +1,4 @@
-openflamingo
+open_flamingo
 datasets
 termcolor
 pdbpp
