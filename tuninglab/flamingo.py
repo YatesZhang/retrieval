@@ -29,7 +29,7 @@ from Flamingo.config.baseline import dataset_config, model_config
 from Flamingo.utils.pretty import pretty_print 
 from torch.distributed.elastic.multiprocessing.errors import get_error_handler, ChildFailedError,record
 """ 
-CUDA_VISIBLE_DEVICES=0 python fine_tuning.py
+CUDA_VISIBLE_DEVICES=0 python flamingo.py
 """
 
 def random_seed(seed=42, rank=0):

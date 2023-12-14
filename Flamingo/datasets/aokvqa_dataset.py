@@ -17,7 +17,7 @@ REASON_QUESTIONS = [
 
 class AOKVQADataset(VQADataset):
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, **kwargs):
-        tokenizer.eos_token = None
+        # tokenizer.eos_token = None
         super().__init__(tokenizer, vis_processor, vis_root, ann_paths, **kwargs)
 
     def get_path(self, ann):

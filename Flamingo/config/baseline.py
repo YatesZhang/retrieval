@@ -14,3 +14,6 @@ dataset_config = dict(
     ann_paths=["/home/yunzhi/datasets/aokvqa_v1p0/aokvqa_v1p0_train.json"],
     sample_image=False,
 )
+
+
+# padded_samples = self.tokenizer.pad(x,return_tensors="pt",padding="longest",truncation=True)

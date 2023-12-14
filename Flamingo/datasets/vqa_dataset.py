@@ -56,7 +56,7 @@ class VQADataset(Dataset):
         vis_root (string): Root directory of images (e.g. coco/images/)
         ann_root (string): directory to store the annotation file
         """
-        assert tokenizer.eos_token is None, "tokenizer should not add eos token by default"
+        # assert tokenizer.eos_token is None, "tokenizer should not add eos token by default"
         # assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
         self.tokenizer = tokenizer
         self.vis_root = vis_root
@@ -186,16 +186,16 @@ class VQADataset(Dataset):
             else:
                 l = np.concatenate([remainder, l]).astype(np.int64)
             padded_labels.append(l)
-        print(input_id_list)
-        print(attention_mask_list)
-        print(padded_labels)
+        # print(input_id_list)
+        # print(attention_mask_list)
+        # print(padded_labels)
         # pdb.set_trace()
+        padding_target = {"input_ids": input_id_list, "attention_mask": attention_mask_list, "labels": padded_labels}
         try:
-            padded_samples = self.tokenizer(
-                {"input_ids": input_id_list, "attention_mask": attention_mask_list, "labels": padded_labels},
+            padded_samples = self.tokenizer.pad(
+                padding_target,
                 return_tensors="pt",
-                padding="longest",
-                truncation=True
+                padding="longest"
             )
         except:
             pdb.set_trace()
