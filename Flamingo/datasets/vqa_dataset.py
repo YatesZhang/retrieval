@@ -103,6 +103,20 @@ class VQADataset(Dataset):
         return image
 
     def process_text(self, ann):
+        """ 
+        meta: 
+            split: str = 'train',
+            image_id: int = 39446,
+            question_id: str = 'hashcode'
+            instance_id: str = '1'
+        data:
+            question: str: 'where is the man?' 
+            choices: list = ['gt_category', ...]
+            correct_choice_idx: int = 0
+            direct_ansers: list = ['descption', ..., ]
+            difficult_direct_answer: bool = False
+            rationals: list = ['proof1','proof2', ... ]
+        """
         question = ann["question"]
 
         answer_weight = {}
@@ -152,10 +166,11 @@ class VQADataset(Dataset):
 
     def __getitem__(self, index):
         ann = self.annotation[index]
-        # import pdb 
-        # pdb.set_trace()
-        image = self.process_image(ann)
+        import pdb 
+        pdb.set_trace()
         text = self.process_text(ann)
+        image = self.process_image(ann)
+
         res = self.tokenize(text)
         res.update(image=image)
         res.update(text)
