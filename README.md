@@ -14,6 +14,9 @@ CUDA_VISIBLE_DEVICES=0 python flan_t5.py
 |-|-|-|
 | enable_int8 = True|876MiB| 10min54s/epoch|
 | enable_int8 = False|2104MiB| 3min36s/epoch|
+
+## training LLM in lower cost:
+- [Deep Speed Example](https://www.philschmid.de/fine-tune-flan-t5-deepspeed)
 ## train on single GPU 
 ```bash
 CUDA_VISIVLE_DEVICES=0 torchrun \
@@ -36,6 +39,11 @@ python flamingo.py \
   --workers 1 \
   --batch_size 1 \ 
 ```
+## Evaluation 
+
+详细介绍了COCO Caption工作
+- [Microsoft COCO Captions: Data Collection and Evaluation Server](https://www.arxiv-vanity.com/papers/1504.00325/)
+- [BLIP-2](https://github.com/salesforce/LAVIS/blob/main/dataset_card/coco_caption.md)的README.md详细介绍了metric
 ```python
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa
                    "to_q", "to_kv", "to_out",    # gate cross layer attention 
