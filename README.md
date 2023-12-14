@@ -44,6 +44,7 @@ python flamingo.py \
 详细介绍了COCO Caption工作
 - [Microsoft COCO Captions: Data Collection and Evaluation Server](https://www.arxiv-vanity.com/papers/1504.00325/)
 - [BLIP-2](https://github.com/salesforce/LAVIS/blob/main/dataset_card/coco_caption.md)的README.md详细介绍了metric
+- [Huggingface demo](https://github.com/huggingface/blog/blob/main/notebooks/02_how_to_generate.ipynb)介绍了generate任务
 ```python
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa
                    "to_q", "to_kv", "to_out",    # gate cross layer attention 
