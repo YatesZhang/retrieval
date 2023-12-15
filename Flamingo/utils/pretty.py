@@ -14,8 +14,8 @@ def print_local_vars(func):
         inline function can be replaced by decorator in python:
     """
     def wrapper(*args, **kwargs):
-        rich_print("[bold magenta]Local [/bold magenta]!", ":vampire:", locals())
         result = func(*args, **kwargs)
+        rich_print("[bold magenta]Local [/bold magenta]!", ":vampire:", locals())
         return result
     return wrapper
 
@@ -34,7 +34,7 @@ def imread(path):
     """
     return np.array(Image.open(path))
 
-@print_local_vars
+# @print_local_vars
 def pretty_print(*data_list, color="yellow", line=False):
     """ 
         pretty print
@@ -51,12 +51,5 @@ def pretty_print(*data_list, color="yellow", line=False):
     return 
 
 
-# print("Hello, [bold magenta]World[/bold magenta]!", ":vampire:", locals())
-if __name__ == "__main__":
-    test_dict = dict(
-        a=1,
-        b=2,
-        c="hello"
-    )
-    pretty_print(test_dict)
+
     
