@@ -6,3 +6,5 @@ py7zr
 peft
 bitsandbytes
 scikit-image
+deepspeed
+deepspeed[triton]

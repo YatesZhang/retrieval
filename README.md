@@ -52,6 +52,10 @@ python flamingo.py \
 ### microsoft VQA-v2
 - [evaluation page](https://visualqa.org/evaluation.html)
 - [code on github](https://github.com/GT-Vision-Lab/VQA)
+### A-okvqa
+## Inference
+- [trion compiler](https://github.com/openai/triton)
+- [trion integrated in DeepSpeed](https://github.com/microsoft/DeepSpeed/blob/master/blogs/deepspeed-triton/README.md)
 ```python
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa
                    "to_q", "to_kv", "to_out",    # gate cross layer attention 
