@@ -22,10 +22,12 @@ def imread(path):
     return np.array(Image.open(path))
 
 
-def pretty_print(*data_list, color="yellow"):
+def pretty_print(*data_list, color="yellow", line=False):
     """ 
         pretty print
     """
+    if line:
+        cprint("-------------------------------------------------", color=color)
     for data in data_list:  
         if isinstance(data, str):
             cprint(data, color)
