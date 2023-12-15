@@ -3,6 +3,10 @@
 ```
 conda env create -f environment.yml
 ```
+## Dataset
+- [weather classification on kaggle](https://www.kaggle.com/datasets/jehanbhathena/weather-dataset/data)
+- CULane(test set)
+- VIL-100(split)
 ## fine tuning demo on flan-t5-small
 - 使用int8和fp16混合精度训练flan-t5-small
 - 使用bitsandbytes库进行混合精度训练时，对int8自动反量化有额外时间开销使训练时间变长
@@ -40,11 +44,14 @@ python flamingo.py \
   --batch_size 1 \ 
 ```
 ## Evaluation 
-
+### COCO-captions
 详细介绍了COCO Caption工作
 - [Microsoft COCO Captions: Data Collection and Evaluation Server](https://www.arxiv-vanity.com/papers/1504.00325/)
 - [BLIP-2](https://github.com/salesforce/LAVIS/blob/main/dataset_card/coco_caption.md)的README.md详细介绍了metric
 - [Huggingface demo](https://github.com/huggingface/blog/blob/main/notebooks/02_how_to_generate.ipynb)介绍了generate任务
+### microsoft VQA-v2
+- [evaluation page](https://visualqa.org/evaluation.html)
+- [code on github](https://github.com/GT-Vision-Lab/VQA)
 ```python
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa
                    "to_q", "to_kv", "to_out",    # gate cross layer attention 

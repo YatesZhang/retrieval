@@ -5,3 +5,4 @@ pdbpp
 py7zr
 peft
 bitsandbytes
+scikit-image
