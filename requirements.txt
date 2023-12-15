@@ -8,3 +8,4 @@ bitsandbytes
 scikit-image
 deepspeed
 deepspeed[triton]
+rich
