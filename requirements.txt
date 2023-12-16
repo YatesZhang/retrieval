@@ -9,3 +9,4 @@ scikit-image
 deepspeed
 deepspeed[triton]
 rich
+horovod
