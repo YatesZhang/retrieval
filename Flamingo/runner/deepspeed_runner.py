@@ -24,19 +24,25 @@ class Runner(object):
                 model: torch.nn.Module,
                 train_dataloader: DataLoader,
                 test_dataloader: DataLoader,
-                workflows: list,
-                work_dir=None,
                 batch_processor=None, 
-                args=None) -> None:
-        deepspeed.init_distributed()
+                optimizer=None,
+                lr_scheduler=None, 
+                workflows=[('train', 1), ('test', 1)],
+                args=None,
+                ds_config=None) -> None:
+
         self.zero_stage = args.zero_stage
+
+        # get work flows:
         self.workflows = workflows
+        self.train_epoch = 0
+        self.total_epochs = self.get_totol_epochs()
 
         # batch processor: do forward pass and return loss 
         self.batch_processor = batch_processor
 
         # init logger:
-        self.work_dir = work_dir
+        self.work_dir = args.work_dir
         self.init_logger()
 
         # init engine
@@ -44,6 +50,9 @@ class Runner(object):
             args=args,
             model=model,
             model_parameters=model.parameters(),
+            optimizer=optimizer,
+            lr_scheduler=lr_scheduler,
+            ds_config=ds_config
         )
 
         self.model = model 
@@ -121,14 +130,6 @@ class Runner(object):
         return
      
     def save_checkpoint(self):
-        if not os.path.exists(self.checkpoint_dir):
-            os.mkdir(self.checkpoint_dir)
-        save_path = os.path.join(self.checkpoint_dir, f"clip_{self.train_epoch}.pt")
-        torch.save({
-            'model': self.get_model().state_dict(),
-            'optimizer': self.optimizer.state_dict(),
-            }, save_path)
-        self.logger.info(f"save model, optimizer at: {save_path}")
         return 
     
     def before_test_epoch(self):
@@ -143,9 +144,9 @@ class Runner(object):
         self.model.train()
     
     def after_train_epoch(self):
-        if self.train_epoch == 1 or self.train_epoch == self.totol_epochs or self.train_epoch % 4 == 0:
+        if self.train_epoch == 1 or self.train_epoch == self.total_epochs or self.train_epoch % 4 == 0:
             self.save_checkpoint()
-        pass 
+        return 
     
     def after_test_step(self, step):
         if step % 10 == 0:

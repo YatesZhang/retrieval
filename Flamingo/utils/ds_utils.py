@@ -118,3 +118,58 @@ def get_eval_ds_config(offload, stage=0):
         "prescale_gradients": False,
         "wall_clock_breakdown": False
     }
+
+
+def get_optimizer_grouped_parameters(model,
+                                     weight_decay,
+                                     no_decay_name_list=[
+                                         "bias", "LayerNorm.weight"
+                                     ],
+                                     small_learning_rate_list=
+                                     ["embed"], small_lr=1e-4):
+    
+    optimizer_grouped_parameters = [
+        {
+            "params": [
+                p for n, p in model.named_parameters()
+                if (not any(nd in n
+                            for nd in no_decay_name_list) and (not any(nd in n
+                            for nd in small_learning_rate_list)) and p.requires_grad)
+            ],
+            "weight_decay":
+            weight_decay,
+        },
+        {
+            "params": [
+                p for n, p in model.named_parameters()
+                if (any(nd in n
+                        for nd in no_decay_name_list) and (not any(nd in n
+                            for nd in small_learning_rate_list)) and p.requires_grad)
+            ],
+            "weight_decay":
+            0.0,
+        },
+        {
+            "params": [
+                p for n, p in model.named_parameters()
+                if (not any(nd in n
+                            for nd in no_decay_name_list) and (any(nd in n
+                            for nd in small_learning_rate_list)) and p.requires_grad)
+            ],
+            "weight_decay":
+            weight_decay,
+            "lr": small_lr
+        },
+        {
+            "params": [
+                p for n, p in model.named_parameters()
+                if (any(nd in n
+                        for nd in no_decay_name_list) and (any(nd in n
+                            for nd in small_learning_rate_list)) and p.requires_grad)
+            ],
+            "weight_decay":
+            0.0,
+            "lr": small_lr
+        },
+    ]
+    return optimizer_grouped_parameters

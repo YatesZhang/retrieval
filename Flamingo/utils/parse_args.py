@@ -63,6 +63,7 @@ def _parse_args():
         help=
         "Number of updates steps to accumulate before performing a backward/update pass.",
     )
+    
     parser.add_argument(
         "--lr_scheduler_type",
         type=SchedulerType,
@@ -100,13 +101,21 @@ def _parse_args():
         default=2,
         help='ZeRO optimization stage for Actor model (and clones).')
     
+    # BF16 is more stable than FP16 on training:
     parser.add_argument(
         "--precision",
         type=str,
         choices=["fp16", "bf16"],
-        default="fp16",
+        default="bf16",
         help=
         "FP16 or BF16 precision. FP16 is recommended for typical use cases. BF16 is good for large models",
+    )
+
+    parser.add_argument(
+        "--work_dir",
+        type=str,
+        default="../work_dir",
+        help="work directory to save logs, checkpoints"
     )
 
     parser.add_argument('--enable_tensorboard',
@@ -140,11 +149,9 @@ def parse_args():
     # DeepSpeed Config
     ds_config = get_train_ds_config(args, offload=False,
                                     stage=args.zero_stage)
-    ds_config[
-        'train_micro_batch_size_per_gpu'] = args.per_device_train_batch_size
-    ds_config[
-        'train_batch_size'] = args.per_device_train_batch_size * torch.distributed.get_world_size(
-        ) * args.gradient_accumulation_steps
+    ds_config['train_micro_batch_size_per_gpu'] = args.per_device_train_batch_size
+    ds_config['train_batch_size'] = args.per_device_train_batch_size * torch.distributed.get_world_size(
+    ) * args.gradient_accumulation_steps
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
     return args, ds_config 
