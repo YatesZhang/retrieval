@@ -1,5 +1,3 @@
-
-
 from typing import Any
 
 
@@ -21,10 +19,11 @@ class FlamingoBatchProcessor(object):
         #                                              dtype=cast_dtype,
         #                                                non_blocking=True)
         # labels = batch["labels"].to(device_id, dtype=cast_dtype, non_blocking=True)
-        images = batch["image"]
-        input_ids = batch["input_ids"]
-        attention_mask = batch["attention_mask"]
-        labels = batch["labels"]
+        device = model.device 
+        images = batch["image"].to(device)
+        input_ids = batch["input_ids"].to(device)
+        attention_mask = batch["attention_mask"].to(device)
+        labels = batch["labels"].to(device)
         
         # in DeepSpeed: 
         # auto deployment on GPU
@@ -35,13 +34,20 @@ class FlamingoBatchProcessor(object):
                 attention_mask=attention_mask,
                 labels=labels
             )[0]
+        
+        # sum loss: 
         loss = loss.sum() 
         # loss /= self.gradient_accumulation_steps 
         return loss 
 
-    def __call__(self, model, batch):
+    def __call__(self, model, batch, mode='train'):
         """ 
             call the batch processor in training  
         """
-        return self.process_batch(model, batch)
-    
+        assert mode in ['train', 'test', 'inference']
+        if mode == 'train':
+            return self.process_batch(model, batch)
+        elif model == 'test':
+            raise NotImplementedError
+        else:   # inference:
+            raise NotImplementedError
