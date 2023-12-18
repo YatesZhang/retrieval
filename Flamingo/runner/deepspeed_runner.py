@@ -12,14 +12,68 @@ import os
 from typing import Optional
 import pdb 
 import deepspeed
+from Flamingo.utils.pretty import vis_model
+from loguru import logger
+import os.path as osp
+import datetime
 # from copy import deepcopy
-
-
+# from Flamingo.model
+# from Flamingo.model.batch_processor import FlamingoBatchProcessor
 class Runner(object):
-    def __init__(self, model: torch.nn.Module, datasets: list, workflows: list) -> None:
+    def __init__(self,
+                model: torch.nn.Module,
+                train_dataloader: DataLoader,
+                test_dataloader: DataLoader,
+                workflows: list,
+                work_dir=None,
+                batch_processor=None, 
+                args=None) -> None:
         deepspeed.init_distributed()
-        self.model = model 
+        self.zero_stage = args.zero_stage
         self.workflows = workflows
+
+        # batch processor: do forward pass and return loss 
+        self.batch_processor = batch_processor
+
+        # init logger:
+        self.work_dir = work_dir
+        self.init_logger()
+
+        # init engine
+        model, optimizer, _, lr_scheduler = deepspeed.initialize(
+            args=args,
+            model=model,
+            model_parameters=model.parameters(),
+        )
+
+        self.model = model 
+        self.optimizer = optimizer
+        self.lr_scheduler = lr_scheduler
+        self.train_dataloader = train_dataloader
+        self.test_dataloader = test_dataloader
+
+        # init buffer: 
+        self.loss = None 
+        self.step = -1
+
+    def init_logger(self):
+        """ 
+            init logger:
+        """
+        # get time:
+        _time = datetime.datetime.now().strftime("[%Y-%m-%d][%H:%M:%S]")
+        # get pid:
+        _time += "PID:{}".format(os.getpid())
+        # get log file name:
+        logger_name = osp.join(self.work_dir, _time + ".log")
+        # create work_dir and logger:
+        self.logger = logger 
+        self.logger.add(logger_name)
+
+        # info:
+        self.logger.info("create work dir: {}".format(self.work_dir))
+        self.logger.info("create logger: {}".format(logger_name))
+        self.logger.info("init logger success!")
 
     def get_totol_epochs(self):
         totol_epochs = 0
@@ -29,7 +83,15 @@ class Runner(object):
         return totol_epochs
      
     def before_run(self):
-        pass 
+        # model visualization:
+        _ = vis_model(self.model)
+
+        # record to disk: 
+        self.logger.info(self.model)
+        self.logger.info(str(self.optimizer))
+        self.logger.info(str(self.lr_scheduler))
+        self.logger.info(str(self.workflows))
+        return 
     
     def run(self):
         self.before_run()
@@ -78,25 +140,13 @@ class Runner(object):
         self.logger.info("Start Running Test:")
         
     def before_train_epoch(self):
-        self.logger.totol_epochs = self.totol_epochs
-        self.logger.train_epoch = self.train_epoch
-        self.logger.totole_steps = len(self.train_loader) 
         self.model.train()
-        if self.train_loader.dataset.test_mode:
-            self.train_loader.dataset.train(True)
-        if isinstance(self.model, DataParallel):
-            self.train_loader.drop = True
     
     def after_train_epoch(self):
         if self.train_epoch == 1 or self.train_epoch == self.totol_epochs or self.train_epoch % 4 == 0:
             self.save_checkpoint()
         pass 
     
-    def after_train_step(self, step, loss):
-        if step % 10 == 0:
-            self.logger.write_loss(step=step, loss=loss, lr=self.scheduler.get_lr()[0])
-        pass 
-
     def after_test_step(self, step):
         if step % 10 == 0:
             self.logger.info("[Step:{:<3}|{}] Generate Embeddings for Image in Test Set".format(str(step),len(self.test_loader)))
@@ -108,20 +158,31 @@ class Runner(object):
 
     def after_test_epoch(self):
         pass
+    
+    def before_train_iter(self):
+        pass 
 
+    def after_train_iter(self):
+
+        pass 
+    
+    def call_backward(self):
+        """ 
+            gradient accumulation has been integraed in DeepSpeed
+            model, optimizer are wrapped in DeepSpeed
+        """
+        self.model.backward(self.loss)
+        self.model.step() 
+        return  
+    
     def train(self):
         self.before_train_epoch()
         for step, batch in enumerate(self.train_loader):
-            # to_cuda(batch)
-            outputs = self.model(**batch, return_loss=True)
-            # pdb.set_trace()
-            loss = outputs.loss.sum()
-            # loss.backward()
-            self.accelerator.backward(loss)
-            self.optimizer.step()
-            self.scheduler.step()
-            self.optimizer.zero_grad()
-            self.after_train_step(step=step, loss=loss)
+            self.step = step
+            self.before_train_iter()
+            self.loss = self.batch_processor(batch) 
+            self.call_backward() 
+            self.after_train_iter() 
         self.after_train_epoch()
         return 
 

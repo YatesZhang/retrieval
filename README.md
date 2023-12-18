@@ -3,6 +3,11 @@
 ```
 conda env create -f environment.yml
 ```
+
+```bash
+# deepspeed ERROR: Failed building wheel for mpi4py
+conda install -c conda-forge mpi4py openmpi
+```
 ## Dataset
 - [weather classification on kaggle](https://www.kaggle.com/datasets/jehanbhathena/weather-dataset/data)
 - CULane(test set)

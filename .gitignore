@@ -9,3 +9,4 @@ wandb
 int8flan-t5-small-fp16LoRA
 train-my-gpt4
 llama-2-7b
+*.log

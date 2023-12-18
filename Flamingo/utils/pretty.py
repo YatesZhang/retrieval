@@ -24,8 +24,8 @@ def vis_model(model):
     """ 
         model visualization
     """
-    Visualization(model).structure_graph()
-    return 
+    model_struct = Visualization(model).structure_graph()
+    return model_struct 
 
 
 def imread(path):
