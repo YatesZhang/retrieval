@@ -15,5 +15,5 @@ dataset_config = dict(
     sample_image=False,
 )
 
-
+workflows = [('train', 20), ('test', 1)]
 # padded_samples = self.tokenizer.pad(x,return_tensors="pt",padding="longest",truncation=True)

@@ -1,5 +1,19 @@
 """  
     a utils to get DeepSpeed Config
+
+    BF16 vs FP16:
+    BF16: 1 sign + 8 exponent + 7 mantissa
+    FP16: 1 sign + 5 exponent + 10 fraction(mantissa)
+    see this blog: https://medium.com/@furkangozukara/what-is-the-difference-between-fp16-and-bf16-here-a-good-explanation-for-you-d75ac7ec30fa
+
+    LoRA tuning:
+    huggingface: https://huggingface.co/docs/transformers/v4.15.0/performance
+
+    If you have tried to finetune models pre-trained under bf16 mixed precision (e.g. T5) 
+    it’s very likely that you have encountered overflow issues. 
+    Now you should be able to finetune those models without any issues.
+
+That said, also be aware that if you pre-trained a model in bf16, it’s likely to have overflow issues if someone tries to finetune it in fp16 down the road. So once started on the bf16-mode path it’s best to remain on it and not switch to fp16.
 """
 
 # Copyright (c) Microsoft Corporation.
