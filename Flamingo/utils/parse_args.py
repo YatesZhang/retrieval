@@ -63,7 +63,7 @@ def _parse_args():
         help=
         "Number of updates steps to accumulate before performing a backward/update pass.",
     )
-    
+
     parser.add_argument(
         "--lr_scheduler_type",
         type=SchedulerType,
@@ -143,7 +143,7 @@ def parse_args():
 
     """  
     Load DeepSpeed Config
-    assert: train_batch_size == train_micro_batch_size_per_gpu * gradient_accumulation_steps 
+    assert: train_batch_size == train_micro_batch_size_per_gpu * gradient_accumulation_steps * world_size
     """
 
     # DeepSpeed Config

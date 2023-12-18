@@ -64,7 +64,7 @@ def main():
         name=args.lr_scheduler_type,    # cosine as default
         optimizer=optimizer,
         num_warmup_steps=args.num_warmup_steps,    # 100 as default
-        num_training_steps=args.num_train_epochs * num_update_steps_per_epoch,
+        num_training_steps=sum([flow[1] for flow in workflows if flow[0] == 'train']) * num_update_steps_per_epoch,
     )
     
     runner = DeepSpeedRunner(

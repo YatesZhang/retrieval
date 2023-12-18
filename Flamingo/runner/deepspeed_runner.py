@@ -16,9 +16,8 @@ from Flamingo.utils.pretty import vis_model
 from loguru import logger
 import os.path as osp
 import datetime
-# from copy import deepcopy
-# from Flamingo.model
-# from Flamingo.model.batch_processor import FlamingoBatchProcessor
+
+
 class Runner(object):
     def __init__(self,
                 model: torch.nn.Module,
@@ -30,7 +29,8 @@ class Runner(object):
                 workflows=[('train', 1), ('test', 1)],
                 args=None,
                 ds_config=None) -> None:
-
+        
+        # DeepSpeed config:
         self.zero_stage = args.zero_stage
 
         # get work flows:
