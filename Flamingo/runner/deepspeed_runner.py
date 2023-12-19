@@ -18,7 +18,13 @@ import os.path as osp
 import datetime
 from Flamingo.utils.distributed import rank_zero_only
 
-
+""" 
+    1) training step on logger 
+    2) save checkpoints on rank 0
+    3) evaluation on rank 0 with deepspeed inference
+    see: https://github.com/microsoft/DeepSpeed/issues/4287
+    4) resume from checkpoint
+"""
 class Runner(object):
     def __init__(self,
                 model: torch.nn.Module,
@@ -106,6 +112,7 @@ class Runner(object):
         self.logger.info(str(self.workflows))
         # self.logger.info()
         return 
+    
     @rank_zero_only
     def info(self, msg):
         self.logger.info(msg)
