@@ -52,7 +52,7 @@ class Runner(object):
             model_parameters=model.parameters(),
             optimizer=optimizer,
             lr_scheduler=lr_scheduler,
-            ds_config=args.ds_config 
+            config=args.ds_config 
         )
 
         self.model = model 
@@ -92,15 +92,15 @@ class Runner(object):
         return totol_epochs
      
     def before_run(self):
-        # model visualization:
-        _ = vis_model(self.model)
+        # model visualization is integrated in create_model_and_transformers
+        # _ = vis_model(self.model)
 
         # record to disk: 
         self.logger.info(self.model)
         self.logger.info(str(self.optimizer))
         self.logger.info(str(self.lr_scheduler))
         self.logger.info(str(self.workflows))
-        self.logger.info()
+        # self.logger.info()
         return 
     
     def run(self):
@@ -179,7 +179,7 @@ class Runner(object):
     
     def train(self):
         self.before_train_epoch()
-        for step, batch in enumerate(self.train_loader):
+        for step, batch in enumerate(self.train_dataloader):
             self.step = step
             self.before_train_iter()
             self.loss = self.batch_processor(batch) 

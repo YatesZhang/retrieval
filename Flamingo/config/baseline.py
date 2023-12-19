@@ -18,10 +18,15 @@ model_config = dict(
     lora_tuning=True  
 )
 
+# .13
+# vis_root = "/home/yunzhi/datasets/COCO/train2017"
+# .89:
+vis_root = "/root/ln_homework/data/COCO/train2017"
+anno_path = "/root/ln_homework/data/COCO/aokvqa_v1p0/aokvqa_v1p0_train.json"
 dataset_config = dict(
     type="aokvqa",
-    vis_root="/home/yunzhi/datasets/COCO/train2017",
-    ann_paths=["/home/yunzhi/datasets/aokvqa_v1p0/aokvqa_v1p0_train.json"],
+    vis_root=vis_root,
+    ann_paths=[anno_path],
     sample_image=False,
 )
 

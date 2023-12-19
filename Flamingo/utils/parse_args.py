@@ -16,9 +16,25 @@ def set_random_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 def _parse_args():
+    """ 
+    CUDA_VISIBLE_DEVICES=2,3,4,5 deepspeed train.py \
+        --per_device_train_batch_size 2 \
+        --learning_rate 1e-5 \
+        --learning_rate_pretraining_components 0 \
+        --weight_decay 0 \
+        --gradient_accumulation_steps 1 \
+        --lr_scheduler_type cosine \
+        --num_warmup_steps 100 \
+        --seed 1234 \
+        --local_rank 0 \
+        --gradient_checkpointing \
+        --zero_stage 2 \
+        --precision bf16 \
+        --work_dir ../work_dir \
+    
+    """
     parser = argparse.ArgumentParser(
-        description=
-        "Finetune Open Flamingo on a multi-modal task")
+        description="Finetune Open Flamingo on a multi-modal task")
     parser.add_argument(
         "--per_device_train_batch_size",
         type=int,
@@ -50,11 +66,6 @@ def _parse_args():
                         type=float,
                         default=0.,
                         help="Weight decay to use.")
-    
-    parser.add_argument("--num_train_epochs",
-                        type=int,
-                        default=50,
-                        help="Total number of training epochs to perform.")
     
     parser.add_argument(
         "--gradient_accumulation_steps",
@@ -137,7 +148,7 @@ def _parse_args():
 def parse_args():
     """ 
         return: 
-            1) DeepSpeed Config, 2) args from argparse
+            1) DeepSpeed Config
     """
     args = _parse_args()
 

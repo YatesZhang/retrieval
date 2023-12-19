@@ -10,6 +10,7 @@ from bigmodelvis import Visualization
 from huggingface_hub import hf_hub_download
 import pdb 
 
+
 def create_model_and_transforms(
     clip_vision_encoder_path: str,
     clip_vision_encoder_pretrained: str,
@@ -62,7 +63,10 @@ def create_model_and_transforms(
         Image processor: Pipeline to preprocess input images
         Tokenizer: A tokenizer for the language model
     """
-    print("[create_model_and_transforms] create vision_encoder and image_processor from open_clip")
+    from rich import print 
+    global_rank = torch.distributed.get_rank()
+    # print("gloabl_rank:", global_rank)
+    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] create vision_encoder and image_processor from open_clip")
     vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
         clip_vision_encoder_path,    # "ViT-L-14"
         pretrained=clip_vision_encoder_pretrained,    # "openai"
@@ -70,7 +74,7 @@ def create_model_and_transforms(
     )
     # set the vision encoder to output the visual features
     vision_encoder.visual.output_tokens = True
-    print("[create_model_and_transforms] create text_tokenizer")
+    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] create text_tokenizer")
     text_tokenizer = AutoTokenizer.from_pretrained(
         tokenizer_path,
         local_files_only=use_local_files,
@@ -86,7 +90,7 @@ def create_model_and_transforms(
         # modify labels for the loss.
         text_tokenizer.add_special_tokens({"pad_token": "<PAD>"})
 
-    print("[create_model_and_transforms] create LLM from ", lang_encoder_path)
+    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] create LLM from ", lang_encoder_path)
     lang_encoder = AutoModelForCausalLM.from_pretrained(
         lang_encoder_path,
         local_files_only=use_local_files,
@@ -113,7 +117,7 @@ def create_model_and_transforms(
     lang_encoder.set_decoder_layers_attr_name(decoder_layers_attr_name)
     lang_encoder.resize_token_embeddings(len(text_tokenizer))
 
-    print("[create_model_and_transforms] create Flamingo with cross_attn_every_n_layers=", cross_attn_every_n_layers)
+    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] create Flamingo with cross_attn_every_n_layers=", cross_attn_every_n_layers)
     model = Flamingo(
         vision_encoder,
         lang_encoder,
@@ -127,14 +131,14 @@ def create_model_and_transforms(
     )
 
     # load checkpoint:
-    print("[create_model_and_transforms] load checkpoint.pt from huggingface ")
+    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] load checkpoint.pt from huggingface ")
     checkpoint_path = hf_hub_download("openflamingo/OpenFlamingo-3B-vitl-mpt1b",
      "checkpoint.pt",
       cache_dir=cache_dir)
     # checkpoint_path = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo/checkpoint.pt"
     model.load_state_dict(torch.load(checkpoint_path), strict=False)
     
-    print("[create_model_and_transforms] Freeze all parameters ")
+    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] Freeze all parameters ")
     # Freeze all parameters
     model.requires_grad_(False)
     assert sum(p.numel() for p in model.parameters() if p.requires_grad) == 0
@@ -164,13 +168,14 @@ def create_model_and_transforms(
         **tuning_config
     )
     # pdb.set_trace()
-    print("[create_model_and_transforms] LoRa tuning mode: ", lora_tuning)
+    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] LoRa tuning mode: ", lora_tuning)
     if lora_tuning:
-        print("[create_model_and_transforms] LoRa tuning adaptor injection: ", lora_target_modules)
+        print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] LoRa tuning adaptor injection: ", lora_target_modules)
         model = get_peft_model(model, peft_config=tuning_config)
         model.print_trainable_parameters()
     # vis model: 
-    Visualization(lang_encoder).structure_graph()
+    if global_rank == 0:
+        Visualization(lang_encoder).structure_graph()
     
     # --------------------------------------------------------------------------
     if not add_eos_token:

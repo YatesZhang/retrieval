@@ -7,7 +7,7 @@ import numpy as np
 from typing import List, Optional
 from bigmodelvis import Visualization
 from rich import print as rich_print
-
+import torch 
 
 def print_local_vars(func):
     """ 
@@ -21,11 +21,14 @@ def print_local_vars(func):
 
 
 def vis_model(model):
+    global_rank = torch.distributed.get_rank()
     """ 
         model visualization
     """
-    model_struct = Visualization(model).structure_graph()
-    return model_struct 
+    if global_rank == 0:
+        model_struct = Visualization(model).structure_graph()
+        return model_struct 
+    return 
 
 
 def imread(path):
