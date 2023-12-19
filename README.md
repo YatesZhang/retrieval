@@ -25,7 +25,8 @@ CUDA_VISIBLE_DEVICES=0 python flan_t5.py
 | enable_int8 = False|2104MiB| 3min36s/epoch|
 
 ## training LLM in lower cost:
-- [Deep Speed Example](https://www.philschmid.de/fine-tune-flan-t5-deepspeed)
+- [DeepSpeed Example](https://www.philschmid.de/fine-tune-flan-t5-deepspeed)
+- [DeepSpeed Transformer block kernel for acceleration](https://www.deepspeed.ai/tutorials/bert-finetuning/)
 ## train on single GPU 
 ```bash
 CUDA_VISIVLE_DEVICES=0 torchrun \
