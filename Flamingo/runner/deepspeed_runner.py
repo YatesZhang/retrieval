@@ -16,6 +16,7 @@ from Flamingo.utils.pretty import vis_model
 from loguru import logger
 import os.path as osp
 import datetime
+from Flamingo.utils.distributed import rank_zero_only
 
 
 class Runner(object):
@@ -32,6 +33,7 @@ class Runner(object):
         # DeepSpeed config:
         self.args = args
         self.zero_stage = args.zero_stage
+        self.rank = torch.distributed.get_rank()
         
         # get work flows:
         self.workflows = workflows
@@ -64,8 +66,9 @@ class Runner(object):
         # init buffer: 
         self.loss = None 
         self.step = -1
-
-    def init_logger(self):
+    
+    @rank_zero_only
+    def init_logger(self):                  
         """ 
             init logger:
         """
@@ -90,7 +93,8 @@ class Runner(object):
             if flow == 'train':
                 totol_epochs += epochs 
         return totol_epochs
-     
+    
+    @rank_zero_only
     def before_run(self):
         # model visualization is integrated in create_model_and_transformers
         # _ = vis_model(self.model)
@@ -102,13 +106,16 @@ class Runner(object):
         self.logger.info(str(self.workflows))
         # self.logger.info()
         return 
-    
+    @rank_zero_only
+    def info(self, msg):
+        self.logger.info(msg)
+
     def run(self):
         self.before_run()
         for flow, epochs in self.workflows:
             assert flow in ['train', 'test']
             workflow_fn = getattr(self, flow)
-            self.logger.info(f"WORKFLOW: {flow}, EPOCHS: {epochs}")
+            self.info(f"WORKFLOW: {flow}, EPOCHS: {epochs}")
             for _ in range(epochs):
                 if flow == 'train':
                     self.train_epoch += 1
@@ -163,9 +170,12 @@ class Runner(object):
     
     def before_train_iter(self):
         pass 
-
+    
+    @rank_zero_only
     def after_train_iter(self):
-
+        if self.step % 10 == 0:
+            self.logger.info("[Epoch:{epoch}|{total_epoch}] rank@{rank} Loss: {loss}", 
+            epoch=self.train_epoch, total_epoch=self.total_epochs, rank=self.rank, loss=self.loss.item())
         pass 
     
     def call_backward(self):
@@ -177,12 +187,14 @@ class Runner(object):
         self.model.step() 
         return  
     
+    # @logger.catch
     def train(self):
         self.before_train_epoch()
         for step, batch in enumerate(self.train_dataloader):
             self.step = step
             self.before_train_iter()
-            self.loss = self.batch_processor(batch) 
+            self.loss = self.batch_processor(model=self.model,
+             batch=batch, mode='train') 
             self.call_backward() 
             self.after_train_iter() 
         self.after_train_epoch()

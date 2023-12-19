@@ -19,7 +19,6 @@ def print_local_vars(func):
         return result
     return wrapper
 
-
 def vis_model(model):
     global_rank = torch.distributed.get_rank()
     """ 

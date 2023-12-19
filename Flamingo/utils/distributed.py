@@ -129,3 +129,18 @@ def is_rank0():
     if not torch.distributed.is_initialized():
         return True
     return torch.distributed.get_rank() == 0
+
+
+
+def rank_zero_only(func):
+    """ 
+        only rank == 0 will execute the function
+        else return None
+    """
+    def wrapper(self, *args, **kwargs):
+        if self.rank == 0:
+            result = func(self, *args, **kwargs)
+            return result
+        else:
+            return 
+    return wrapper 

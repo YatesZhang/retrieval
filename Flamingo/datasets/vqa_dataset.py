@@ -166,8 +166,6 @@ class VQADataset(Dataset):
 
     def __getitem__(self, index):
         ann = self.annotation[index]
-        import pdb 
-        pdb.set_trace()
         text = self.process_text(ann)
         image = self.process_image(ann)
 

@@ -1,12 +1,13 @@
 from typing import Any
-
-
+import torch 
+# from torch.cuda.amp import autocast
 class FlamingoBatchProcessor(object):
-    def __init__(self, gradient_accumulation_steps=1.0):
+    def __init__(self, cast_type=torch.bfloat16):
         """ 
             training with gradient accumulation
             (integrated in DeepSpeed)
         """
+        self.cast_type = cast_type
         # self.gradient_accumulation_steps = gradient_accumulation_steps
         pass 
 
@@ -20,14 +21,11 @@ class FlamingoBatchProcessor(object):
         #                                                non_blocking=True)
         # labels = batch["labels"].to(device_id, dtype=cast_dtype, non_blocking=True)
         device = model.device 
-        images = batch["image"].to(device)
-        input_ids = batch["input_ids"].to(device)
-        attention_mask = batch["attention_mask"].to(device)
-        labels = batch["labels"].to(device)
+        images = batch["image"].to(device, dtype=self.cast_type, non_blocking=True).unsqueeze(1).unsqueeze(1)
+        input_ids = batch["input_ids"].to(device, dtype=torch.long,  non_blocking=True)
+        attention_mask = batch["attention_mask"].to(device, dtype=torch.long,  non_blocking=True)
+        labels = batch["labels"].to(device, dtype=torch.long, non_blocking=True)
         
-        # in DeepSpeed: 
-        # auto deployment on GPU
-        # auto cast to fp16
         loss = model(
                 vision_x=images,
                 lang_x=input_ids,

@@ -1,4 +1,5 @@
 import math 
+import torch 
 import deepspeed
 # model config and dataset config: 
 from Flamingo.config.baseline import dataset_config, model_config, workflows
@@ -17,7 +18,11 @@ from transformers import AdamW
 from transformers import get_scheduler
 from Flamingo.utils.ds_utils import get_optimizer_grouped_parameters
 
-
+PRECISIONS = {
+    "fp32": torch.float,
+    "fp16": torch.float16,
+    "bf16": torch.bfloat16,
+}
 def main():
     """ 
         build componets
@@ -25,14 +30,15 @@ def main():
     deepspeed.init_distributed()
     # get DeepSpeed config and args 
     args = parse_args()
-
+    
     # build model, image processor and tokenizer
     model, image_processor, tokenizer = create_model_and_transforms(
         **model_config
     )
 
     # build batch processor for model (Forward pass, return loss): 
-    batch_processor = FlamingoBatchProcessor()
+    precision = args.precision 
+    batch_processor = FlamingoBatchProcessor(PRECISIONS[precision])
 
     # build dataloader:
     dataset = build_dataset(
