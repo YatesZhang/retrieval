@@ -1,10 +1,20 @@
+import os.path as osp
+# .13:
+# cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
+# lang_encoder_path = "anas-awadalla/mpt-1b-redpajama-200b"
+
+# .89:
+cache_dir = "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
+lang_encoder_path = osp.join(cache_dir, "models--anas-awadalla--mpt-1b-redpajama-200b")
+tokenizer_path = lang_encoder_path
+
 model_config = dict(
     clip_vision_encoder_path="ViT-L-14",
     clip_vision_encoder_pretrained="openai",
-    lang_encoder_path="anas-awadalla/mpt-1b-redpajama-200b",
-    tokenizer_path="anas-awadalla/mpt-1b-redpajama-200b",
+    lang_encoder_path=lang_encoder_path,
+    tokenizer_path=tokenizer_path,
     cross_attn_every_n_layers=1,
-    cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo",
+    cache_dir = cache_dir,
     lora_tuning=True  
 )
 

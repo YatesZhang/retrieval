@@ -44,7 +44,7 @@ def main():
     # dataloader: true batch_size is train_micro_batch_size_per_gpu
     train_dataloader = DataLoader(
         dataset,
-        batch_size=ds_config['train_micro_batch_size_per_gpu'],   
+        batch_size=args.ds_config['train_micro_batch_size_per_gpu'],   
         # num_workers=args.workers,    # 
         sampler=DistributedSampler(dataset, shuffle=True, drop_last=True),
         collate_fn=dataset.collater,

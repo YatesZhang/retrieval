@@ -7,13 +7,19 @@ from PIL import Image
 import requests
 import torch
 from transformers.tokenization_utils_base import BatchEncoding
-
-cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
+import os.path as osp
+# .13:
+# cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
+# lang_encoder_path = "anas-awadalla/mpt-1b-redpajama-200b"
+# .89:
+cache_dir = "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
+lang_encoder_path = osp.join(cache_dir, "models--anas-awadalla--mpt-1b-redpajama-200b")
+tokenizer_path = lang_encoder_path
 model, image_processor, tokenizer = create_model_and_transforms(
     clip_vision_encoder_path="ViT-L-14",
     clip_vision_encoder_pretrained="openai",
-    lang_encoder_path="anas-awadalla/mpt-1b-redpajama-200b",
-    tokenizer_path="anas-awadalla/mpt-1b-redpajama-200b",
+    lang_encoder_path=lang_encoder_path,
+    tokenizer_path=tokenizer_path,
     cross_attn_every_n_layers=1,
     cache_dir= cache_dir,  # Defaults to ~/.cache
     lora_tuning=True
