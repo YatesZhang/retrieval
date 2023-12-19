@@ -24,7 +24,7 @@ def main():
     """
     deepspeed.init_distributed()
     # get DeepSpeed config and args 
-    args, ds_config = parse_args()
+    args = parse_args()
 
     # build model, image processor and tokenizer
     model, image_processor, tokenizer = create_model_and_transforms(
@@ -70,11 +70,12 @@ def main():
     runner = DeepSpeedRunner(
         model=model,
         train_dataloader=train_dataloader,
+        test_dataloader=None, 
         batch_processor=batch_processor,
         optimizer=optimizer, 
         lr_scheduler=lr_scheduler,
         workflows=workflows,
-        args=args,
+        args=args
     )
     runner.run() 
     

@@ -154,4 +154,5 @@ def parse_args():
     ) * args.gradient_accumulation_steps
     # If passed along, set the training seed now.
     set_random_seed(args.seed)
-    return args, ds_config 
+    args.ds_config = ds_config
+    return args

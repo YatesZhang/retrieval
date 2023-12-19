@@ -27,12 +27,12 @@ class Runner(object):
                 optimizer=None,
                 lr_scheduler=None, 
                 workflows=[('train', 1), ('test', 1)],
-                args=None,
-                ds_config=None) -> None:
+                args=None) -> None:
         
         # DeepSpeed config:
+        self.args = args
         self.zero_stage = args.zero_stage
-
+        
         # get work flows:
         self.workflows = workflows
         self.train_epoch = 0
@@ -52,7 +52,7 @@ class Runner(object):
             model_parameters=model.parameters(),
             optimizer=optimizer,
             lr_scheduler=lr_scheduler,
-            ds_config=ds_config
+            ds_config=args.ds_config 
         )
 
         self.model = model 
@@ -100,6 +100,7 @@ class Runner(object):
         self.logger.info(str(self.optimizer))
         self.logger.info(str(self.lr_scheduler))
         self.logger.info(str(self.workflows))
+        self.logger.info()
         return 
     
     def run(self):
