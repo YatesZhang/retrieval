@@ -8,11 +8,21 @@ import requests
 import torch
 from transformers.tokenization_utils_base import BatchEncoding
 import os.path as osp
-# .13:
+from Flamingo.utils import path_finder
+
+CACHE_DIRS = [
+    # .13:
+    "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo",
+    # .89:
+    "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
+]
+cache_dir = path_finder(CACHE_DIRS)
+# for dir_path in CACHE_DIRS:
+#     if osp.exists(cache_dir):
 # cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
 # lang_encoder_path = "anas-awadalla/mpt-1b-redpajama-200b"
 # .89:
-cache_dir = "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
+# cache_dir = "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
 lang_encoder_path = osp.join(cache_dir, "models--anas-awadalla--mpt-1b-redpajama-200b")
 tokenizer_path = lang_encoder_path
 model, image_processor, tokenizer = create_model_and_transforms(
