@@ -23,7 +23,11 @@ def vis_model(model):
     """ 
         model visualization if rank == 0
     """
-    global_rank = torch.distributed.get_rank()
+    try: 
+        global_rank = torch.distributed.get_rank()
+    except RuntimeError:
+        model_struct = Visualization(model).structure_graph()
+        return 
     if global_rank == 0:
         model_struct = Visualization(model).structure_graph()
         return model_struct 
