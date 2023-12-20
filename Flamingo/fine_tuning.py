@@ -33,6 +33,9 @@ CUDA_VISIBLE_DEVICES=0 python fine_tuning.py
 """
 
 def random_seed(seed=42, rank=0):
+    """ 
+    set random seed for reproducibility
+    """
     torch.manual_seed(seed + rank)
     np.random.seed(seed + rank)
     random.seed(seed + rank)

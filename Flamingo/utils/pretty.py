@@ -20,10 +20,10 @@ def print_local_vars(func):
     return wrapper
 
 def vis_model(model):
-    global_rank = torch.distributed.get_rank()
     """ 
-        model visualization
+        model visualization if rank == 0
     """
+    global_rank = torch.distributed.get_rank()
     if global_rank == 0:
         model_struct = Visualization(model).structure_graph()
         return model_struct 

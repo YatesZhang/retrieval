@@ -35,7 +35,9 @@ class Runner(object):
                 lr_scheduler=None, 
                 workflows=[('train', 1), ('test', 1)],
                 args=None) -> None:
-        
+        """ 
+            Runner for DeeoSpeed training
+        """
         # DeepSpeed config:
         self.args = args
         self.zero_stage = args.zero_stage
@@ -115,9 +117,15 @@ class Runner(object):
     
     @rank_zero_only
     def info(self, msg):
+        """ 
+            print info on rank 0 only 
+        """
         self.logger.info(msg)
 
     def run(self):
+        """ 
+            run workflows
+        """
         self.before_run()
         for flow, epochs in self.workflows:
             assert flow in ['train', 'test']
@@ -130,6 +138,9 @@ class Runner(object):
         return 
     
     def resume(self, path: Optional[str] = None, load_optim=False):
+        """ 
+            resume from checkpoint: 
+        """
         if path is None or path == '':
             return 
         if not os.path.exists(path):
@@ -164,22 +175,30 @@ class Runner(object):
         return 
     
     def after_test_step(self, step):
+        """ 
+            after test step hook
+        """
         if step % 10 == 0:
             self.logger.info("[Step:{:<3}|{}] Generate Embeddings for Image in Test Set".format(str(step),len(self.test_loader)))
         pass
-    
-    def after_query_step(self, step):
-        if step % 10 == 0:
-            self.logger.info("[Step:{:<3}|{}] Generate Embeddings for Image Queris".format(str(step),len(self.test_loader)))
 
     def after_test_epoch(self):
+        """ 
+            after test epoch hook
+        """
         pass
     
     def before_train_iter(self):
+        """ 
+            before train iter hook
+        """
         pass 
     
     @rank_zero_only
     def after_train_iter(self):
+        """ 
+            after train iter hook
+        """
         if self.step % 10 == 0:
             self.logger.info("[Epoch:{epoch}|{total_epoch}] rank@{rank} Loss: {loss}", 
             epoch=self.train_epoch, total_epoch=self.total_epochs, rank=self.rank, loss=self.loss.item())
