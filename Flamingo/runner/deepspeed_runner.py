@@ -41,12 +41,17 @@ class Runner(object):
         # DeepSpeed config:
         self.args = args
         self.zero_stage = args.zero_stage
+        
+        # Distributed config:
         self.rank = torch.distributed.get_rank()
+        self.world_size = torch.distributed.get_world_size()
         
         # get work flows:
         self.workflows = workflows
         self.train_epoch = 0
         self.total_epochs = self.get_totol_epochs()
+        self.total_steps = args.num_update_steps_per_epoch    # a step means a backward call
+        self.train_dataset_name = type(self.train_dataloader.dataset).__name__
 
         # batch processor: do forward pass and return loss 
         self.batch_processor = batch_processor
@@ -78,7 +83,7 @@ class Runner(object):
     @rank_zero_only
     def init_logger(self):                  
         """ 
-            init logger:
+            init logger at rank 0 only
         """
         # get time:
         _time = datetime.datetime.now().strftime("[%Y-%m-%d][%H:%M:%S]")
@@ -86,6 +91,7 @@ class Runner(object):
         _time += "PID:{}".format(os.getpid())
         # get log file name:
         logger_name = osp.join(self.work_dir, _time + ".log")
+        
         # create work_dir and logger:
         self.logger = logger 
         self.logger.add(logger_name)
@@ -159,6 +165,9 @@ class Runner(object):
         return 
     
     def before_test_epoch(self):
+        """ 
+            before test epoch hook
+        """
         self.model.eval()
         if not self.test_loader.dataset.test_mode:
             self.test_loader.dataset.train(False)
@@ -167,7 +176,9 @@ class Runner(object):
         self.logger.info("Start Running Test:")
         
     def before_train_epoch(self):
+        self.step = 0
         self.model.train()
+
     
     def after_train_epoch(self):
         if self.train_epoch == 1 or self.train_epoch == self.total_epochs or self.train_epoch % 4 == 0:
@@ -194,20 +205,35 @@ class Runner(object):
         """
         pass 
     
-    @rank_zero_only
+    # @rank_zero_only
     def after_train_iter(self):
         """ 
             after train iter hook
         """
         if self.step % 10 == 0:
-            self.logger.info("[Epoch:{epoch}|{total_epoch}] rank@{rank} Loss: {loss}", 
-            epoch=self.train_epoch, total_epoch=self.total_epochs, rank=self.rank, loss=self.loss.item())
-        pass 
+            self.info("[rank@{rank}|{world_size}][Epoch:{epoch}|{total_epoch}][Step:{step}|{total_step}] \
+                      Dataset: {dataset}, Loss: {loss}", 
+                epoch=self.train_epoch,
+                total_epoch=self.total_epochs,
+                rank=self.rank, 
+                world_size=self.world_size,
+                step=self.step,
+                total_step=self.totol_steps,
+                loss=self.loss.item(),
+                dataset=self.train_dataset_name)
+        return  
     
     def call_backward(self):
         """ 
             gradient accumulation has been integraed in DeepSpeed
             model, optimizer are wrapped in DeepSpeed
+
+            if you want to change backward pass to normal torch style:
+            use: 
+                self.loss.backward()
+                self.scheduler.step()
+                self.optimizer.step()
+                self.optimizer.zero_grad()
         """
         self.model.backward(self.loss)
         self.model.step() 

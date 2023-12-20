@@ -18,11 +18,13 @@ from transformers import AdamW
 from transformers import get_scheduler
 from Flamingo.utils.ds_utils import get_optimizer_grouped_parameters
 
+
 PRECISIONS = {
     "fp32": torch.float,
     "fp16": torch.float16,
     "bf16": torch.bfloat16,
 }
+# ------------------------------------------------------------------------ #
 def main():
     """ 
         build componets
@@ -65,6 +67,7 @@ def main():
                               betas=(0.9, 0.95))
     
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
+    args.num_update_steps_per_epoch = num_update_steps_per_epoch
 
     lr_scheduler = get_scheduler(
         name=args.lr_scheduler_type,    # cosine as default

@@ -12,6 +12,9 @@ class FlamingoBatchProcessor(object):
         pass 
 
     def process_batch(self, model, batch):
+        """ 
+            training phase
+        """
         # images = batch["image"].to(device_id, dtype=cast_dtype, non_blocking=True)\
         # .unsqueeze(1).unsqueeze(1)
         # input_ids = batch["input_ids"].to(device_id,
