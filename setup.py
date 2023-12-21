@@ -1,3 +1,10 @@
+""" 
+    setup project:
+        pip install -e . -i https://pypi.tuna.tsinghua.edu.cn/simple/
+
+    usage:
+        from Flamingo.xxx import xxx
+"""
 from setuptools import find_packages, setup
 
 
