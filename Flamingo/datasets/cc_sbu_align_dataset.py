@@ -1,3 +1,7 @@
+""" 
+    CcSbuAlignDataset
+"""
+
 import json
 import os
 import random
@@ -65,6 +69,9 @@ QUESTIONS = [
 
 class CcSbuAlignDataset(VQADataset):
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, add_eos=True, ignore_instruction=True):
+        """ 
+            init
+        """
         self.tokenizer = tokenizer
         self.vis_root = vis_root
 
@@ -78,6 +85,9 @@ class CcSbuAlignDataset(VQADataset):
         self.ignore_instruction = ignore_instruction
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         # random select a question
         question = random.choice(QUESTIONS)
         answer = ann["caption"]
@@ -85,6 +95,9 @@ class CcSbuAlignDataset(VQADataset):
         return dict(instruction=instruction, answer=answer)
 
     def process_image(self, ann):
+        """ 
+            process image
+        """
         image_path = os.path.join(self.vis_root, ann["image_id"] + ".jpg")
         image = Image.open(image_path).convert("RGB")
 
@@ -99,6 +112,9 @@ def build_ccsbualign_dataset(
     ann_paths=["data/cc_sbu_align/filter_cap.json"],
     **kwargs,
 ):
+    """ 
+        build dataset
+    """
     return CcSbuAlignDataset(
         tokenizer=tokenizer,
         vis_processor=vis_processor,

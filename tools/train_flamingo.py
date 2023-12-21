@@ -1,3 +1,6 @@
+"""
+    a script to fine-tuning Flamingo 
+"""
 import math 
 import torch 
 import deepspeed
@@ -89,4 +92,7 @@ def main():
     runner.run() 
     
 if __name__ == "__main__":
+    """ 
+        main
+    """
     main() 

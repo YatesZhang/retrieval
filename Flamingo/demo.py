@@ -1,3 +1,7 @@
+"""
+    quick demo for openflamingo
+"""
+
 # grab model checkpoint from huggingface hub
 from huggingface_hub import hf_hub_download
 import torch

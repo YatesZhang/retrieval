@@ -17,6 +17,7 @@ from loguru import logger
 import os.path as osp
 import datetime
 from Flamingo.utils.distributed import rank_zero_only
+from Flamingo.utils.utils import get_lora_weight_only
 
 """ 
     1) training step on logger 
@@ -102,6 +103,9 @@ class Runner(object):
         self.logger.info("init logger success!")
 
     def get_totol_epochs(self):
+        """ 
+            total epochs
+        """
         totol_epochs = 0
         for flow, epochs in self.workflows:
             if flow == 'train':
@@ -110,6 +114,9 @@ class Runner(object):
     
     @rank_zero_only
     def before_run(self):
+        """ 
+            before run hook
+        """
         # model visualization is integrated in create_model_and_transformers
         # _ = vis_model(self.model)
 
@@ -122,7 +129,7 @@ class Runner(object):
         return 
     
     @rank_zero_only
-    def info(self, msg):
+    def info_rank_zero(self, msg):
         """ 
             print info on rank 0 only 
         """
@@ -136,7 +143,7 @@ class Runner(object):
         for flow, epochs in self.workflows:
             assert flow in ['train', 'test']
             workflow_fn = getattr(self, flow)
-            self.info(f"WORKFLOW: {flow}, EPOCHS: {epochs}")
+            self.info_rank_zero(f"WORKFLOW: {flow}, EPOCHS: {epochs}")
             for _ in range(epochs):
                 if flow == 'train':
                     self.train_epoch += 1
@@ -145,23 +152,47 @@ class Runner(object):
     
     def resume(self, path: Optional[str] = None, load_optim=False):
         """ 
-            resume from checkpoint: 
+            resume from checkpoint:
+            activated in each rank 
         """
         if path is None or path == '':
+            # self.work_dir
             return 
         if not os.path.exists(path):
             raise FileNotFoundError
-        checkpoint = torch.load(path)
-        self.get_model().load_state_dict(checkpoint['model'])
-        self.logger.info(f"load model from: {path}[model]")
+        
+        # load state_dict:
+        loRA_weight = torch.load(path)
+        self.model.load_state_dict(loRA_weight, strict=False)
+        self.logger.info("[rank@{rank}|{world_size}] load from checkpoint {path}",
+                         rank=self.rank,
+                         world_size=self.world_size,
+                         path=path)
         if load_optim:
-            self.optimizer.load_state_dict(checkpoint['optimizer'])
-            self.logger.info(f"load optimizer from {path}[optimizer]")
+            # self.optimizer.load_state_dict(checkpoint['optimizer'])
+            # self.logger.info(f"load optimizer from {path}[optimizer]")
+            raise NotImplementedError
         else:
-            self.logger.info("optimizer is not loaded")
+            self.logger.info("[rank@{rank}|{world_size}] optimizer is not loaded !",
+                             rank=self.rank,
+                             world_size=self.world_size)
         return
-     
+    
+    @rank_zero_only
     def save_checkpoint(self):
+        """ 
+            only save loRA weight in rank 0
+        """
+        loRA_dict = get_lora_weight_only(self.model)
+        save_dir = osp.join(self.work_dir, str(self.train_epoch))
+        if not osp.exists(save_dir):
+            os.mkdir(save_dir)
+        weight_path = osp.join(save_dir, 'loRA.pth')
+        torch.save(loRA_dict, weight_path)
+        self.info_rank_zero("[rank@{rank}|{world_size}]LoRA weight saved at: {weight_path}",
+                   weight_path=weight_path,
+                   rank=self.rank,
+                   world_size=self.world_size)
         return 
     
     def before_test_epoch(self):
@@ -169,27 +200,35 @@ class Runner(object):
             before test epoch hook
         """
         self.model.eval()
-        if not self.test_loader.dataset.test_mode:
-            self.test_loader.dataset.train(False)
-        if self.test_loader.drop_last:
-            self.test_loader.drop_last = False
-        self.logger.info("Start Running Test:")
+        self.logger.info("[rank@{rank}|{world_size}] Start Running Test:",
+                         rank=self.rank,
+                         world_size=self.world_size)
         
     def before_train_epoch(self):
+        """ 
+            before train hook
+        """
         self.step = 0
         self.model.train()
+        self.logger.info("[rank@{rank}|{world_size}][@runner.before_train_epoch] set step=0, set model.train()",
+                         rank=self.rank,
+                         world_size=self.world_size)
 
     
     def after_train_epoch(self):
-        if self.train_epoch == 1 or self.train_epoch == self.total_epochs or self.train_epoch % 4 == 0:
+        """ 
+            after train hook
+            1) save loRA weight
+        """
+        if self.train_epoch == 1 or self.train_epoch == self.total_epochs or self.train_epoch % 1 == 0:
             self.save_checkpoint()
         return 
     
-    def after_test_step(self, step):
+    def after_test_step(self):
         """ 
             after test step hook
         """
-        if step % 10 == 0:
+        if self.step % 10 == 0:
             self.logger.info("[Step:{:<3}|{}] Generate Embeddings for Image in Test Set".format(str(step),len(self.test_loader)))
         pass
 
@@ -211,7 +250,7 @@ class Runner(object):
             after train iter hook
         """
         if self.step % 10 == 0:
-            self.info("[rank@{rank}|{world_size}][Epoch:{epoch}|{total_epoch}][Step:{step}|{total_step}] \
+            self.info_rank_zero("[rank@{rank}|{world_size}][Epoch:{epoch}|{total_epoch}][Step:{step}|{total_step}] \
                       Dataset: {dataset}, Loss: {loss}", 
                 epoch=self.train_epoch,
                 total_epoch=self.total_epochs,
@@ -241,6 +280,9 @@ class Runner(object):
     
     # @logger.catch
     def train(self):
+        """ 
+            train workflow
+        """
         self.before_train_epoch()
         for step, batch in enumerate(self.train_dataloader):
             self.step = step
@@ -253,25 +295,17 @@ class Runner(object):
         return 
 
     def test(self):
+        """ 
+            test phase 
+            how to do test in DeepSpeed ? 
+        """
         self.before_test_epoch()
-
-        # run single GPU test:
-        # -------Generate Embeddings in test set---------
-        dataset = self.test_loader.dataset   
-        embeds = []
-        test_gt = []
         with torch.no_grad():
             for step, batch in enumerate(self.test_loader):
-                images = batch['pixel_values']
-                # get embedding & frobenius norm to 1
-                out = self.model.module.get_image_features(images)
-                out /= out.norm(p=2,dim=-1, keepdim=True)
-                embeds.append(out)
-                if self.test_gt is None or len(self.test_gt) == 0:
-                    test_gt += [dataset.map_zh2en(text) for text in batch['text']]
-                self.after_test_step(step=step)
-        embeds = torch.cat(embeds, dim=0)    # [N_t, 512]
-        test_gt = np.array(test_gt)
+                self.step = step 
+                output = self.batch_processor(model=self.model, batch=batch, mode='test') 
+                self.after_test_step()
+        raise NotImplementedError
 
         
 

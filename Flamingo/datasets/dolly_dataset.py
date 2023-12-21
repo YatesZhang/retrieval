@@ -1,3 +1,6 @@
+"""
+    DollyDataset
+"""
 import copy
 import json
 
@@ -14,6 +17,9 @@ TEMPLATE = {
 
 class LMPrompter:
     def __call__(self, instruction, input=None):
+        """ 
+            prompter
+        """
         if input is None or len(input) == 0:
             return TEMPLATE["prompt_no_input_format"].format(instruction=instruction)
         else:
@@ -49,14 +55,23 @@ class DollyDataset(Dataset):
         self.load_annotation(ann_path)
 
     def load_annotation(self, ann_path):
+        """ 
+            load anno
+        """
         self.annotation = []
         for line in open(ann_path, "r").readlines():
             self.annotation.append(json.loads(line))
 
     def __len__(self):
+        """ 
+            len
+        """
         return len(self.annotation)
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         instruction = ann["instruction"]
         context = ann["context"]
         response = ann["response"]
@@ -64,6 +79,9 @@ class DollyDataset(Dataset):
         return dict(instruction=instruction, answer=response)
 
     def tokenize(self, text):
+        """ 
+            tokenizer
+        """
         res = self.tokenizer(
             text["instruction"] + text["answer"],
             return_tensors=None,
@@ -88,6 +106,9 @@ class DollyDataset(Dataset):
         return res
 
     def __getitem__(self, index):
+        """ 
+            index 
+        """
         ann = self.annotation[index]
         text = self.process_text(ann)
         res = self.tokenize(text)
@@ -95,6 +116,9 @@ class DollyDataset(Dataset):
         return res
 
     def collater(self, samples):
+        """
+            collate function 
+        """
         question_list, answer_list, input_id_list, attention_mask_list, labels_list = [], [], [], [], []
 
         for sample in samples:
@@ -142,6 +166,9 @@ def build_dolly_dataset(
     ann_path="data/dolly/databricks-dolly-15k.jsonl",
     **kwargs,
 ):
+    """ 
+        build dataset
+    """
     return DollyDataset(
         tokenizer=tokenizer,
         ann_path=ann_path,

@@ -97,6 +97,9 @@ def get_train_ds_config(args,
     return output
 
 def get_eval_ds_config(offload, stage=0):
+    """ 
+        Evaluation for DeepSpeed
+    """
     device = "cpu" if offload else "none"
     zero_opt_dict = {
         "stage": stage,
@@ -127,7 +130,11 @@ def get_optimizer_grouped_parameters(model,
                                      ],
                                      small_learning_rate_list=
                                      ["embed"], small_lr=1e-4):
-    
+    """
+        get params
+        split params: 
+            weight decay, no weight decay
+    """
     optimizer_grouped_parameters = [
         {
             "params": [

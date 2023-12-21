@@ -1,3 +1,6 @@
+""" 
+    utils
+"""
 import torch 
 import os.path as osp 
 from deepspeed import zero
@@ -64,14 +67,13 @@ def get_peft_state_maybe_zero_3(named_params, bias):
     return to_return
 
 
-def save_lora_weight_only(peft_model, save_dir):
+def get_lora_weight_only(peft_model):
     """ 
-        1) only save LoRA weight 
-        2) support save DeepSpeed Zero stage 3 model
-        3) save as huggingface format
+        1) only get state dict of LoRA weight 
+        2) support get state dict of DeepSpeed Zero stage 3 model
+
+        return state_dict of LoRA weight 
     """
     bias = peft_model.peft_config['default'].bias
     state_dict = get_peft_state_maybe_zero_3(peft_model.named_parameters(), bias=bias)
-    weight_path = osp.join(save_dir, 'lora.pth')
-    torch.save(state_dict, weight_path)
     return state_dict 

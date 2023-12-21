@@ -1,3 +1,7 @@
+"""
+    parse args for DeepSpeed
+"""
+
 from Flamingo.utils.ds_utils import get_train_ds_config
 import deepspeed 
 from transformers import set_seed
@@ -8,6 +12,12 @@ import numpy as np
 import random 
 
 def set_random_seed(seed):
+    """ 
+        set random seed for:
+            1) random
+            2) numpy
+            3) torch
+    """
     if seed is not None:
         set_seed(seed)
         random.seed(seed)

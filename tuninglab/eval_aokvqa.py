@@ -1,9 +1,20 @@
+"""
+    Eval A-OK VQA test
+    #TODO:
+    implemnet this evaluation
+    modify from:
+    https://github.com/allenai/aokvqa/tree/main/evaluation
+"""
+
 import os
 import json
 from Flamingo.utils import pretty_print
 import pdb 
 
 def load_aokvqa(aokvqa_dir, split, version='v1p0'):
+    """ 
+        load data
+    """
     assert split in ['train', 'val', 'test', 'test_w_ans']
     dataset = json.load(open(
         os.path.join(aokvqa_dir, f"aokvqa_{version}_{split}.json")
@@ -11,6 +22,9 @@ def load_aokvqa(aokvqa_dir, split, version='v1p0'):
     return dataset
 
 def get_coco_path(split, image_id, coco_dir):
+    """ 
+        coco path
+    """
     return os.path.join(coco_dir, f"{split}2017", f"{image_id:012}.jpg")
 
 if __name__ == "__main__":

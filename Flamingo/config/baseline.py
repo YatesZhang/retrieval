@@ -1,10 +1,26 @@
+""" 
+    config
+"""
 import os.path as osp
-# .13:
-# cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
-# lang_encoder_path = "anas-awadalla/mpt-1b-redpajama-200b"
+from Flamingo.utils import path_finder
 
-# .89:
-cache_dir = "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
+CACHE_DIRS = [
+    # .13:
+    "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo",
+    # .89:
+    "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
+]
+
+VIS_ROOTS = [
+    "/root/ln_homework/data/COCO/train2017",
+    "/home/datasets/COCO/train2017"
+]
+
+ANNO_PATHS = [
+    "/home/datasets/COCO/annotations",
+    "/home/yunzhi/datasets/aokvqa_v1p0/aokvqa_v1p0_train.json"
+]
+cache_dir = path_finder(CACHE_DIRS)
 lang_encoder_path = osp.join(cache_dir, "models--anas-awadalla--mpt-1b-redpajama-200b")
 tokenizer_path = lang_encoder_path
 
@@ -18,11 +34,10 @@ model_config = dict(
     lora_tuning=True  
 )
 
-# .13
-# vis_root = "/home/yunzhi/datasets/COCO/train2017"
-# .89:
-vis_root = "/root/ln_homework/data/COCO/train2017"
-anno_path = "/root/ln_homework/data/COCO/aokvqa_v1p0/aokvqa_v1p0_train.json"
+#
+vis_root = path_finder(VIS_ROOTS)
+anno_path = path_finder(ANNO_PATHS)
+
 dataset_config = dict(
     type="aokvqa",
     vis_root=vis_root,

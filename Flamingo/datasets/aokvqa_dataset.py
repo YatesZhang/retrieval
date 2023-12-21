@@ -1,3 +1,7 @@
+"""
+AOKVQADataset
+"""
+
 import random
 
 from .vqa_dataset import VQADataset
@@ -17,10 +21,16 @@ REASON_QUESTIONS = [
 
 class AOKVQADataset(VQADataset):
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, **kwargs):
+        """ 
+            init
+        """
         # tokenizer.eos_token = None
         super().__init__(tokenizer, vis_processor, vis_root, ann_paths, **kwargs)
 
     def get_path(self, ann):
+        """ 
+            get path
+        """
         image_id = str(ann["image_id"])
         while len(image_id) != 12:
             image_id = "0" + image_id
@@ -29,6 +39,9 @@ class AOKVQADataset(VQADataset):
         return image_id
     
     def process_image(self, ann):
+        """ 
+            process image
+        """
         image_path = self.get_path(ann)
         image = Image.open(image_path).convert("RGB")
 
@@ -36,6 +49,9 @@ class AOKVQADataset(VQADataset):
         return image
     
     def process_text(self, ann):
+        """ 
+            process_text
+        """
         question = ann["question"]
         question = question + " " + random.choice(REASON_QUESTIONS)
 
@@ -60,6 +76,9 @@ def build_aokvqa_dataset(
     ann_paths=["data/aokvqa/annotations/aokvqa_v1p0_train.json"],
     sample_image=False,
 ):
+    """ 
+        build dataset
+    """
     return AOKVQADataset(
         tokenizer=tokenizer,
         vis_processor=vis_processor,

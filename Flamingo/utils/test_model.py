@@ -1,3 +1,7 @@
+"""
+    test model
+"""
+
 import torch 
 from torch import nn
 
@@ -6,6 +10,9 @@ from torch import nn
 class ConvBlock(nn.Module):
 
     def __init__(self, num_channels: int, layer_scale_init: float = 1e-6):
+        """ 
+            init 
+        """
         super().__init__()
         self.residual = nn.Sequential(
             nn.GroupNorm(1, num_channels),  # LayerNorm
@@ -18,6 +25,9 @@ class ConvBlock(nn.Module):
         self.layer_scale = nn.Parameter(torch.tensor(layer_scale_init))
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        """ 
+            forward
+        """
         h = inputs + self.layer_scale * self.residual(inputs)
         return h
 
@@ -25,6 +35,9 @@ class ConvBlock(nn.Module):
 class MyClassifier(nn.Module):
 
     def __init__(self, in_channels: int, out_channels: int, ch_multi: int = 32):
+        """ 
+            init 
+        """
         super().__init__()
 
         self.stage1 = nn.Sequential(
@@ -71,6 +84,9 @@ class MyClassifier(nn.Module):
         )
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        """
+            forward
+        """
         h = self.stage1(inputs)
         h = self.stage2(h)
         h = self.stage3(h)
@@ -79,4 +95,7 @@ class MyClassifier(nn.Module):
         return h
 
 if __name__ == "__main__":
+    """ 
+        main  
+    """
     model = MyClassifier(3, 100, ch_multi=128)

@@ -102,6 +102,9 @@ class COCOCaptionDataset(VQADataset):
         self.ignore_instruction = ignore_instruction
 
     def process_image(self, ann):
+        """
+            process image
+        """
         image_path = os.path.join(self.vis_root, ann["image"])
         image = Image.open(image_path).convert("RGB")
 
@@ -109,6 +112,9 @@ class COCOCaptionDataset(VQADataset):
         return image
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         all_captions = ann["caption"]
         if not isinstance(all_captions, list):
             all_captions = [all_captions]

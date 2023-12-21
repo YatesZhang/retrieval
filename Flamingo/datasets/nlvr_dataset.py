@@ -1,3 +1,6 @@
+""" 
+    NLVRv1Dataset & NLVRv2Dataset
+"""
 import copy
 import json
 import os
@@ -37,6 +40,9 @@ class NLVRv1Dataset(VQADataset):
     """Visual Reasoning Dataset."""
 
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, **kwargs):
+        """ 
+            init 
+        """
         super().__init__(tokenizer, vis_processor, vis_root, ann_paths=[], **kwargs)
 
         self.annotation = self.load_annotations(ann_paths)
@@ -47,6 +53,9 @@ class NLVRv1Dataset(VQADataset):
 
     @staticmethod
     def load_annotations(ann_paths):
+        """ 
+            load anno
+        """
         annotation = []
         for ann_path in ann_paths:
             if "train.json" in ann_path:
@@ -69,6 +78,9 @@ class NLVRv1Dataset(VQADataset):
         return annotation
 
     def parse_annotation(self, annotation):
+        """ 
+            parse anno
+        """
         image_list = defaultdict(list)
         for ann in annotation:
             img_key = f"{ann['split']}-{ann['identifier']}"
@@ -79,6 +91,9 @@ class NLVRv1Dataset(VQADataset):
         return annotation
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         question = ann["sentence"] + " " + random.choice(QUESTIONS)
         true_answer = ann["label"]
 
@@ -90,6 +105,9 @@ class NLVRv1Dataset(VQADataset):
         return dict(instruction=instruction, answer=true_answer)
 
     def process_image(self, ann):
+        """ 
+            process image
+        """
         # each question have 6 images, we can random select one of them.
         # TODO: check whether using all 6 images?
         random_id = random.randint(0, 5)
@@ -105,10 +123,16 @@ class NLVRv2Dataset(VQADataset):
     """Visual Reasoning Dataset."""
 
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, **kwargs):
+        """ 
+            init 
+        """
         super().__init__(tokenizer, vis_processor, vis_root, ann_paths, **kwargs)
         self.flip_prob = 0.5
 
     def parse_annotation(self, annotation):
+        """ 
+            parse anno
+        """
         image_list = defaultdict(list)
         for ann in annotation:
             image_list[ann["images"][0]].append(ann)
@@ -119,6 +143,9 @@ class NLVRv2Dataset(VQADataset):
         return annotation
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         question = ann["sentence"] + " " + random.choice(QUESTIONS)
         true_answer = ann["label"]
 
@@ -130,6 +157,9 @@ class NLVRv2Dataset(VQADataset):
         return dict(instruction=instruction, answer=true_answer)
 
     def process_image(self, ann):
+        """ 
+            process image
+        """
         image_0_path = os.path.join(self.vis_root, ann["images"][0])
         image_1_path = os.path.join(self.vis_root, ann["images"][1])
 
@@ -141,6 +171,9 @@ class NLVRv2Dataset(VQADataset):
 
     @staticmethod
     def _flip(samples):
+        """ 
+            flip
+        """
         sentence = samples["sentence"]
         image0, image1 = samples["image0"], samples["image1"]
 
@@ -162,6 +195,9 @@ class NLVRv2Dataset(VQADataset):
         return samples
 
     def __getitem__(self, index):
+        """ 
+            index 
+        """
         ann = copy.deepcopy(self.annotation[index])
         image_0, image_1 = self.process_image(ann)
         if random.random() < self.flip_prob:
@@ -187,6 +223,9 @@ def build_nlvrv1_dataset(
     ann_paths=["data/nlvr//train/train.json"],
     sample_image=False,
 ):
+    """ 
+        build dataset
+    """
     return NLVRv1Dataset(
         tokenizer=tokenizer,
         vis_processor=vis_processor,

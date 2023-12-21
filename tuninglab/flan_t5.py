@@ -78,6 +78,9 @@ max_target_length = int(np.percentile(target_lenghts, 90))
 print(f"Max target length: {max_target_length}")
 
 def preprocess_function(sample,padding="max_length"):
+    """
+        preprocess 
+    """
     # add prefix to the input for t5
     inputs = ["summarize: " + item for item in sample["dialogue"]]
 

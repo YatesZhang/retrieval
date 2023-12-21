@@ -1,3 +1,6 @@
+""" 
+    SNLIVEDataset
+"""
 import json
 import os
 import random
@@ -37,6 +40,9 @@ class SNLIVEDataset(VQADataset):
     """Visual Reasoning Dataset."""
 
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, **kwargs):
+        """ 
+            init 
+        """
         super().__init__(tokenizer, vis_processor, vis_root, ann_paths=[], **kwargs)
 
         self.annotation = self.load_annotations(ann_paths)
@@ -47,6 +53,9 @@ class SNLIVEDataset(VQADataset):
 
     @staticmethod
     def load_annotations(ann_paths):
+        """ 
+            load anno
+        """
         annotation = []
         for ann_path in ann_paths:
             with open(ann_path, "r") as f:
@@ -58,6 +67,9 @@ class SNLIVEDataset(VQADataset):
         return annotation
 
     def parse_annotation(self, annotation):
+        """ 
+            parse anno
+        """
         image_list = defaultdict(list)
         for ann in annotation:
             image_list[ann["Flickr30K_ID"]].append(ann)
@@ -67,6 +79,9 @@ class SNLIVEDataset(VQADataset):
         return annotation
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         question = ann["sentence2"] + " " + random.choice(QUESTIONS)
         answer = ann["gold_label"]
         if random.random() < self.option_prob:
@@ -76,6 +91,9 @@ class SNLIVEDataset(VQADataset):
         return dict(instruction=instruction, answer=answer)
 
     def process_image(self, ann):
+        """ 
+            process image
+        """
         image_path = os.path.join(self.vis_root, ann["Flickr30K_ID"] + ".jpg")
         image = Image.open(image_path).convert("RGB")
         image = self.vis_processor(image)

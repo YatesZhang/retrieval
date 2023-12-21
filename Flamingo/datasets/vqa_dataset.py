@@ -30,6 +30,9 @@ TEMPLATE = {
 
 class VQAPrompter:
     def __call__(self, question, options=None):
+        """
+            prompter
+        """
         if options:
             options = ", ".join(options)
             res = TEMPLATE["prompt_choice"].format(image="<image>", question=question, options=options)
@@ -38,6 +41,9 @@ class VQAPrompter:
         return res
 
     def get_response(self, output: str) -> str:
+        """ 
+            response 
+        """
         return output.split(TEMPLATE["response_split"])[-1].strip()
 
 
@@ -79,6 +85,9 @@ class VQADataset(Dataset):
         self.ignore_instruction = ignore_instruction
 
     def parse_annotation(self, annotation):
+        """ 
+            load anno
+        """
         image_list = defaultdict(list)
         for ann in annotation:
             image_list[ann["image"]].append(ann)
@@ -89,13 +98,22 @@ class VQADataset(Dataset):
         return annotation
 
     def __len__(self):
+        """ 
+            len
+        """
         return len(self.annotation)
 
     def _add_instance_ids(self, key="instance_id"):
+        """ 
+            add ins 
+        """
         for idx, ann in enumerate(self.annotation):
             ann[key] = str(idx)
 
     def process_image(self, ann):
+        """ 
+            process image
+        """
         image_path = os.path.join(self.vis_root, ann["image"])
         image = Image.open(image_path).convert("RGB")
 
@@ -140,6 +158,9 @@ class VQADataset(Dataset):
         return dict(instruction=instruction, answer=true_answer)
 
     def tokenize(self, text):
+        """ 
+            tokenizer
+        """
         res = self.tokenizer(
             text["instruction"] + text["answer"],
             return_tensors=None,
@@ -165,6 +186,9 @@ class VQADataset(Dataset):
         return res
 
     def __getitem__(self, index):
+        """ 
+            index 
+        """
         ann = self.annotation[index]
         text = self.process_text(ann)
         image = self.process_image(ann)
@@ -175,6 +199,9 @@ class VQADataset(Dataset):
         return res
 
     def collater(self, samples):
+        """ 
+            collate function
+        """
         image_list, question_list, answer_list, input_id_list, attention_mask_list, labels_list = [], [], [], [], [], []
 
         for sample in samples:
@@ -229,9 +256,15 @@ class VQADataset(Dataset):
 
 class ConcatDataset(ConcatDataset):
     def __init__(self, datasets: Iterable[Dataset]) -> None:
+        """ 
+            concat dataset
+        """
         super().__init__(datasets)
 
     def collater(self, samples):
+        """ 
+            collate function
+        """
         # TODO For now only supports datasets with same underlying collater implementations
 
         all_keys = set()

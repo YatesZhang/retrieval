@@ -1,3 +1,6 @@
+""" 
+	VQA eval
+"""
 # coding=utf-8
 
 __author__='aagrawal'
@@ -10,6 +13,9 @@ import sys
 
 class VQAEval:
 	def __init__(self, vqa, vqaRes, n=2):
+		""" 
+			init 
+		"""
 		self.n 			  = n
 		self.accuracy     = {}
 		self.evalQA       = {}
@@ -67,6 +73,9 @@ class VQAEval:
 
 
 	def evaluate(self, quesIds=None):
+		""" 
+			eval
+		"""
 		if quesIds == None:
 			quesIds = [quesId for quesId in self.params['question_id']]
 		gts = {}
@@ -128,6 +137,9 @@ class VQAEval:
 		print("Done computing accuracy")
 
 	def processPunctuation(self, inText):
+		"""
+			process punctuation
+		"""
 		outText = inText
 		for p in self.punct:
 			if (p + ' ' in inText or ' ' + p in inText) or (re.search(self.commaStrip, inText) != None):
@@ -140,6 +152,9 @@ class VQAEval:
 		return outText
 
 	def processDigitArticle(self, inText):
+		""" 
+			process digit article
+		"""
 		outText = []
 		tempText = inText.lower().split()
 		for word in tempText:
@@ -155,24 +170,39 @@ class VQAEval:
 		return outText
 
 	def setAccuracy(self, accQA, accQuesType, accAnsType):
+		""" 
+			set acc
+		"""
 		self.accuracy['overall']         = round(100*float(sum(accQA))/len(accQA), self.n)
 		self.accuracy['perQuestionType'] = {quesType: round(100*float(sum(accQuesType[quesType]))/len(accQuesType[quesType]), self.n) for quesType in accQuesType}
 		self.accuracy['perAnswerType']   = {ansType:  round(100*float(sum(accAnsType[ansType]))/len(accAnsType[ansType]), self.n) for ansType in accAnsType}
 
 	def setEvalQA(self, quesId, acc):
+		""" 
+			set QA
+		"""
 		self.evalQA[quesId] = round(100*acc, self.n)
 
 	def setEvalQuesType(self, quesId, quesType, acc):
+		""" 
+			set eval Q type
+		"""
 		if quesType not in self.evalQuesType:
 			self.evalQuesType[quesType] = {}
 		self.evalQuesType[quesType][quesId] = round(100*acc, self.n)
 
 	def setEvalAnsType(self, quesId, ansType, acc):
+		""" 
+			set ans
+		"""
 		if ansType not in self.evalAnsType:
 			self.evalAnsType[ansType] = {}
 		self.evalAnsType[ansType][quesId] = round(100*acc, self.n)
 
 	def updateProgress(self, progress):
+		""" 
+			update
+		"""
 		barLength = 20
 		status = ""
 		if isinstance(progress, int):

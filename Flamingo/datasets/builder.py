@@ -1,3 +1,9 @@
+""" 
+    dataset build 
+    copy from mmgpt
+    https://github.com/open-mmlab/Multimodal-GPT/tree/main/mmgpt
+"""
+
 import numpy as np
 import torch
 
@@ -19,6 +25,9 @@ from .baize_dataset import BaiZeDataset  # noqa: F401
 
 
 def build_dataset(dataset_config, **kwargs):
+    """ 
+        build dataset
+    """
     if isinstance(dataset_config, list):
         datasets = [build_dataset(cfg, **kwargs) for cfg in dataset_config]
         return ConcatDataset(datasets)

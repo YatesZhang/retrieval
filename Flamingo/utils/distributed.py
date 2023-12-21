@@ -10,18 +10,30 @@ except ImportError:
 
 
 def is_global_master(args):
+    """ 
+        global master
+    """
     return args.rank == 0
 
 
 def is_local_master(args):
+    """ 
+        local master
+    """
     return args.local_rank == 0
 
 
 def is_master(args, local=False):
+    """ 
+        master
+    """
     return is_local_master(args) if local else is_global_master(args)
 
 
 def is_using_horovod():
+    """ 
+        using horovod
+    """
     # NOTE w/ horovod run, OMPI vars should be set, but w/ SLURM PMI vars will be set
     # Differentiating between horovod and DDP use via SLURM may not be possible, so horovod arg still required...
     ompi_vars = ["OMPI_COMM_WORLD_RANK", "OMPI_COMM_WORLD_SIZE"]
@@ -33,6 +45,9 @@ def is_using_horovod():
 
 
 def is_using_distributed():
+    """ 
+        distributed
+    """
     if "WORLD_SIZE" in os.environ:
         return int(os.environ["WORLD_SIZE"]) > 1
     if "SLURM_NTASKS" in os.environ:
@@ -41,6 +56,9 @@ def is_using_distributed():
 
 
 def world_info_from_env():
+    """
+        envs
+    """
     local_rank = 0
     for v in (
         "LOCAL_RANK",
@@ -66,6 +84,9 @@ def world_info_from_env():
 
 
 def init_distributed_device(args):
+    """ 
+        init distributed
+    """
     # Distributed training = training on more than one GPU.
     # Works in both single and multi-node scenarios.
     args.distributed = False
@@ -126,6 +147,9 @@ def init_distributed_device(args):
 
 
 def is_rank0():
+    """ 
+        rank 0
+    """
     if not torch.distributed.is_initialized():
         return True
     return torch.distributed.get_rank() == 0

@@ -7,6 +7,9 @@ from tqdm import tqdm
 
 
 def get_cast_dtype(precision: str):
+    """ 
+        cast
+    """
     cast_dtype = None
     if precision == "bf16":
         cast_dtype = torch.bfloat16
@@ -16,6 +19,9 @@ def get_cast_dtype(precision: str):
 
 
 def get_autocast(precision):
+    """ 
+        auto cast
+    """
     if precision == "amp":
         return torch.cuda.amp.autocast
     elif precision == "amp_bfloat16" or precision == "amp_bf16":
@@ -36,7 +42,10 @@ def train_one_epoch(
     lr_scheduler,
     device_id,
     wandb,
-):
+):  
+    """
+        train epoch
+    """
     num_batches_per_epoch_laion = laion_loader.num_batches
     num_batches_per_epoch_mmc4 = mmc4_loader.num_batches
 
@@ -218,6 +227,9 @@ def train_one_epoch(
 
 
 def get_checkpoint(model: torch.nn.Module):
+    """ 
+        checkpoint
+    """
     state_dict = model.state_dict()
     parameters = {k: v for k, v in model.named_parameters()}
     # remove duplicate parameters
@@ -236,15 +248,24 @@ class AverageMeter(object):
     """Computes and stores the average and current value"""
 
     def __init__(self):
+        """ 
+            init 
+        """
         self.reset()
 
     def reset(self):
+        """ 
+            rest
+        """
         self.val = 0
         self.avg = 0
         self.sum = 0
         self.count = 0
 
     def update(self, val, n=1):
+        """ 
+            update
+        """
         self.val = val
         self.sum += val * n
         self.count += n

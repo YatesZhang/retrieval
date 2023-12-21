@@ -59,6 +59,7 @@ python flamingo.py \
 - [evaluation page](https://visualqa.org/evaluation.html)
 - [code on github](https://github.com/GT-Vision-Lab/VQA)
 ### A-okvqa
+- see [code](https://github.com/allenai/aokvqa/tree/main/evaluation)
 ## Inference
 - [trion compiler](https://github.com/openai/triton)
 - [trion integrated in DeepSpeed](https://github.com/microsoft/DeepSpeed/blob/master/blogs/deepspeed-triton/README.md)

@@ -1,3 +1,6 @@
+""" 
+    AlpacaGPT4Dataset
+"""
 import json
 
 from Flamingo.datasets.dolly_dataset import DollyDataset
@@ -16,9 +19,15 @@ class AlpacaGPT4Dataset(DollyDataset):
     """
 
     def load_annotation(self, ann_path):
+        """ 
+            load ann
+        """
         self.annotation = json.load(open(ann_path, "r"))
 
     def process_text(self, ann):
+        """ 
+            text process
+        """
         instruction = ann["instruction"]
         input = ann["input"]
         output = ann["output"]

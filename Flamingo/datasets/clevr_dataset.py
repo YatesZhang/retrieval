@@ -1,3 +1,7 @@
+""" 
+    CLEVRDataset
+"""
+
 import json
 import os
 import random
@@ -15,6 +19,9 @@ class CLEVRDataset(VQADataset):
     """
 
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, **kwargs):
+        """ 
+            init 
+        """
         super().__init__(tokenizer, vis_processor, vis_root, ann_paths=[], **kwargs)
 
         self.annotation = self.load_annotations(ann_paths)
@@ -25,6 +32,9 @@ class CLEVRDataset(VQADataset):
 
     @staticmethod
     def load_annotations(ann_paths):
+        """ 
+            load ann
+        """
         annotation = []
         for ann_path in ann_paths:
             ann = json.load(open(ann_path, "r"))
@@ -32,6 +42,9 @@ class CLEVRDataset(VQADataset):
         return annotation
 
     def parse_annotation(self, annotation):
+        """
+            parse anno
+        """
         image_list = defaultdict(list)
         for ann in annotation:
             image_list[ann["image_filename"]].append(ann)
@@ -41,12 +54,18 @@ class CLEVRDataset(VQADataset):
         return annotation
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         question = ann["question"]
         answer = ann["answer"]
         instruction = self.prompter(question)
         return dict(instruction=instruction, answer=answer)
 
     def process_image(self, ann):
+        """ 
+            process image
+        """
         split = ann["split"]
         image_path = os.path.join(self.vis_root, split, ann["image_filename"])
         image = Image.open(image_path).convert("RGB")
@@ -65,6 +84,9 @@ def build_clevr_dataset(
     ],
     sample_image=False,
 ):
+    """ 
+        build dataset
+    """
     return CLEVRDataset(
         tokenizer=tokenizer,
         vis_processor=vis_processor,

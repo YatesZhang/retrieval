@@ -1,3 +1,8 @@
+""" 
+
+    baize dataset
+"""
+
 import json
 
 from Flamingo.datasets.dolly_dataset import DollyDataset
@@ -13,6 +18,9 @@ TEMPLATE = {
 
 class LangDialPrompter:
     def __call__(self, question, options=None):
+        """ 
+            prompter
+        """
         if options:
             options = ", ".join(options)
             res = TEMPLATE["prompt_choice"].format(image="<image>", question=question, options=options)
@@ -21,6 +29,9 @@ class LangDialPrompter:
         return res
 
     def get_response(self, output: str) -> str:
+        """ 
+            response
+        """
         return output.split(TEMPLATE["response_split"])[-1].strip()
 
 class BaiZeDataset(DollyDataset):
@@ -35,13 +46,22 @@ class BaiZeDataset(DollyDataset):
     ]
     """
     def __init__(self, *args, **kwargs):
+        """
+            init
+        """
         super(BaiZeDataset, self).__init__(*args, **kwargs)
         self.prompter = LangDialPrompter()
 
     def load_annotation(self, ann_path):
+        """ 
+            load ann
+        """
         self.annotation = json.load(open(ann_path, "r"))
 
     def process_text(self, anns):
+        """
+            process text
+        """
         # TODO remove this
         begin_string = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
         convs = anns['input'].split("[|Human|] ")
@@ -59,6 +79,9 @@ class BaiZeDataset(DollyDataset):
         return conv_list
     
     def __getitem__(self, index):
+        """ 
+            index
+        """
         ann = self.annotation[index]
         text_list = self.process_text(ann)
         res_list = []

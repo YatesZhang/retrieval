@@ -1,3 +1,7 @@
+"""
+	Visual Question Evaluation tools
+"""
+
 __author__ = 'aagrawal'
 __version__ = '0.9'
 
@@ -44,6 +48,9 @@ class VQA:
 			self.createIndex()
 
 	def createIndex(self):
+		""" 
+			COCO style
+		"""
         # create index
 		print('creating index...')
 		imgToQA = {ann['image_id']: [] for ann in self.dataset['annotations']}

@@ -1,3 +1,6 @@
+""" 
+    TextOCRDataset
+"""
 import json
 import os
 import random
@@ -34,6 +37,9 @@ class TextOCRDataset(VQADataset):
         self.ignore_instruction = ignore_instruction
 
     def process_image(self, ann):
+        """ 
+            process image
+        """
         image_path = os.path.join(self.vis_root, ann["image_id"] + ".jpg")
         image = Image.open(image_path).convert("RGB")
 
@@ -41,6 +47,9 @@ class TextOCRDataset(VQADataset):
         return image
 
     def process_text(self, ann):
+        """
+            process text
+        """
         question = ann["question"]
 
         answer_weight = {}

@@ -1,4 +1,8 @@
-"""Modified from https://github.com/mlfoundations/open_flamingo"""
+"""
+    Modified from https://github.com/mlfoundations/open_flamingo
+    see mmgpt: https://github.com/open-mmlab/Multimodal-GPT/tree/main/mmgpt
+    to remove
+"""
 
 import argparse
 import copy
@@ -42,6 +46,9 @@ def random_seed(seed=42, rank=0):
 
 @record
 def main():
+    """
+        main 
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--run_name",

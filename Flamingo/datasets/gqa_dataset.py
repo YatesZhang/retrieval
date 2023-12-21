@@ -1,3 +1,6 @@
+"""
+    GQADataset
+"""
 import json
 import os
 import random
@@ -12,6 +15,9 @@ class GQADataset(VQADataset):
     """Visual Reasoning Dataset."""
 
     def __init__(self, tokenizer, vis_processor, vis_root, ann_paths, **kwargs):
+        """ 
+            init
+        """
         super().__init__(tokenizer, vis_processor, vis_root, ann_paths=[], **kwargs)
 
         self.annotation = self.load_annotations(ann_paths)
@@ -23,6 +29,9 @@ class GQADataset(VQADataset):
 
     @staticmethod
     def load_annotations(ann_paths):
+        """ 
+            load anno
+        """
         annotation = []
         for ann_path in ann_paths:
             ann = json.load(open(ann_path, "r"))
@@ -32,6 +41,9 @@ class GQADataset(VQADataset):
         return annotation
 
     def parse_annotation(self, annotation):
+        """ 
+            parse anno
+        """
         image_list = defaultdict(list)
         for ann in annotation:
             image_list[ann["imageId"]].append(ann)
@@ -41,6 +53,9 @@ class GQADataset(VQADataset):
         return annotation
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         question = ann["question"]
 
         answer = ann["answer"]
@@ -57,6 +72,9 @@ class GQADataset(VQADataset):
         return dict(instruction=instruction, answer=select_answer)
 
     def process_image(self, ann):
+        """ 
+            process image
+        """
         image_path = os.path.join(self.vis_root, ann["imageId"] + ".jpg")
         image = Image.open(image_path).convert("RGB")
 
@@ -74,6 +92,9 @@ def build_gqa_dataset(
     ],
     sample_image=False,
 ):
+    """ 
+        build dataset
+    """
     return GQADataset(
         tokenizer=tokenizer,
         vis_processor=vis_processor,

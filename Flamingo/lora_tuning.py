@@ -1,3 +1,9 @@
+"""
+    add LoRA weight for Flamingo
+    #TODO:
+    add visual prompt for CLIP visual encoder 
+"""
+
 from typing import Optional
 import torch 
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -196,6 +202,9 @@ def create_model_and_transforms(
 
 
 def _infer_decoder_layers_attr_name(model):
+    """
+        inject tools
+    """
     for k in __KNOWN_DECODER_LAYERS_ATTR_NAMES:
         if k.lower() in model.__class__.__name__.lower():
             return __KNOWN_DECODER_LAYERS_ATTR_NAMES[k]

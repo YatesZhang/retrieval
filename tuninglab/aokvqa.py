@@ -1,3 +1,9 @@
+"""
+    dataset test
+    test: 
+        A-OK VQA
+"""
+
 from Flamingo.datasets.builder import build_dataset 
 from Flamingo.config.baseline import dataset_config, model_config
 from Flamingo.utils.pretty import pretty_print 

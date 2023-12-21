@@ -1,3 +1,6 @@
+"""
+    OCRVQADataset
+"""
 import os
 import random
 
@@ -8,6 +11,9 @@ from .vqa_dataset import VQADataset
 
 class OCRVQADataset(VQADataset):
     def process_image(self, ann):
+        """ 
+            process image
+        """
         image_path = os.path.join(self.vis_root, ann["filename"])
         image = Image.open(image_path).convert("RGB")
 
@@ -15,6 +21,9 @@ class OCRVQADataset(VQADataset):
         return image
 
     def process_text(self, ann):
+        """ 
+            process text
+        """
         index = random.choice(list(range(len(ann["questions"]))))
         question = ann["questions"][index]
         answer = ann["answers"][index]

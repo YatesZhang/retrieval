@@ -1,3 +1,6 @@
+""" 
+    DialDataset
+"""
 from .vqa_dataset import VQADataset
 
 TEMPLATE = {
@@ -13,6 +16,9 @@ TEMPLATE = {
 
 class DialPrompter:
     def __call__(self, question, options=None):
+        """ 
+            prompter
+        """
         if options:
             options = ", ".join(options)
             res = TEMPLATE["prompt_choice"].format(image="<image>", question=question, options=options)
@@ -21,19 +27,31 @@ class DialPrompter:
         return res
 
     def get_response(self, output: str) -> str:
+        """
+            response
+        """
         return output.split(TEMPLATE["response_split"])[-1].strip()
 
 
 class DialDataset(VQADataset):
     def __init__(self, *args, **kwargs):
+        """ 
+            init 
+        """
         super(DialDataset, self).__init__(*args, **kwargs)
         self.prompter = DialPrompter()
 
     def _add_instance_ids(self, key="id"):
+        """ 
+            add instance
+        """
         for idx, ann in enumerate(self.annotation):
             ann[key] = str(idx)
 
     def process_text(self, anns):
+        """ 
+            process text
+        """
         # TODO remove this
         begin_string = "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n### Image:\n{image}".format(
             image="<image>"
@@ -54,6 +72,9 @@ class DialDataset(VQADataset):
         return conv_list
 
     def __getitem__(self, index):
+        """ 
+            index 
+        """
         ann = self.annotation[index]
         image = self.process_image(ann)
         text_list = self.process_text(ann)
