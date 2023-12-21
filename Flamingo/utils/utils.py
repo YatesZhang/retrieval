@@ -1,6 +1,8 @@
+import torch 
 import os.path as osp 
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus 
+from rich import print 
 
 
 def path_finder(PATHS: list):
@@ -70,5 +72,6 @@ def save_lora_weight_only(peft_model, save_dir):
     """
     bias = peft_model.peft_config['default'].bias
     state_dict = get_peft_state_maybe_zero_3(peft_model.named_parameters(), bias=bias)
-    # torch.save()
-    pass 
+    weight_path = osp.join(save_dir, 'lora.pth')
+    torch.save(state_dict, weight_path)
+    return state_dict 

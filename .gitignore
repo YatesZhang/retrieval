@@ -11,3 +11,4 @@ train-my-gpt4
 llama-2-7b
 core.*
 *.log
+*.pth
