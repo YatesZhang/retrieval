@@ -1,5 +1,24 @@
 # Open Flamingo
-## environment
+
+## 1. Demo
+```bash 
+# zero shot inference using open flamingo
+cd Flamingo
+python demo.py
+
+# or use jupyter notebook at Flamingo/demo.ipynb
+```
+### input image:  
+![demo](./Flamingo/images/yellow_bus.jpg)
+### input prompt
+```
+"<image>the color is"
+```
+### output text
+```
+"<image>the color is yellow and the bus is yellow.<|endofchunk|>"
+```
+## 2. environment
 ```
 conda env create -f environment.yml
 ```
@@ -8,11 +27,13 @@ conda env create -f environment.yml
 # deepspeed ERROR: Failed building wheel for mpi4py
 conda install -c conda-forge mpi4py openmpi
 ```
-## Dataset
+## 3. Dataset
 - [weather classification on kaggle](https://www.kaggle.com/datasets/jehanbhathena/weather-dataset/data)
-- CULane(test set)
-- VIL-100(split)
-## fine tuning demo on flan-t5-small
+- we can use [GPT-4V](https://openai.com/research/gpt-4v-system-card) to generate pseudo label on opensource dataset of triffic scenes
+see: 
+- [GPT-4V free trial](https://www.gpt4v.net/zh-CN)
+- [GPT-4V Example](https://mp.weixin.qq.com/s/JoWtS5LP-QJGiH3a9ZSLcQ): On the Road with GPT-4V(ision): Early Explorations of Visual-Language Model on Autonomous Driving
+## 4. Mix Precision fine tuning demo on flan-t5-small
 - 使用int8和fp16混合精度训练flan-t5-small
 - 使用bitsandbytes库进行混合精度训练时，对int8自动反量化有额外时间开销使训练时间变长
 ```bash
@@ -24,45 +45,64 @@ CUDA_VISIBLE_DEVICES=0 python flan_t5.py
 | enable_int8 = True|876MiB| 10min54s/epoch|
 | enable_int8 = False|2104MiB| 3min36s/epoch|
 
-## training LLM in lower cost:
+## 5. training LLM in lower cost:
 - [DeepSpeed Example](https://www.philschmid.de/fine-tune-flan-t5-deepspeed)
-- [DeepSpeed Transformer block kernel for acceleration](https://www.deepspeed.ai/tutorials/bert-finetuning/)
-## train on single GPU 
+- use [DeepSpeed Transformer block kernel](https://www.deepspeed.ai/tutorials/bert-finetuning/) for acceleration 
+### 5.1 train with DeepSpeed 
 ```bash
-CUDA_VISIVLE_DEVICES=0 torchrun \
---nproc_per_node=1 \
---nnodes=1 \
-fine_tuning.py \
-  --run_name exp_1 \
-  --learning_rate 1e-5 \
-  --lr_scheduler cosine \
-  --workers 1 \
-  --batch_size 1 \ 
+cd tools
+chmod +x train_flamingo.sh
+./train_flamingo.sh
 ```
-
+or using this command:
 ```bash
-cd tuninglab
-python flamingo.py \
-  --run_name exp_1 \
-  --learning_rate 1e-5 \
-  --lr_scheduler cosine \
-  --workers 1 \
-  --batch_size 1 \ 
+# DeepSpeed training 
+# instead of set environment variable CUDA_VISIBLE_DEVICES,  we can use --include to specify which gpu to use
+deepspeed --include=localhost:2,3,4,5 train_flamingo.py \
+    # real batch size == gradient accumulation step * VISIBLE_DEVICES(world_size) * per_device_train_batch_size 
+    --per_device_train_batch_size 2 \
+    # learning rate
+    --learning_rate 1e-5 \
+    # learning rate of model weights with weight decay
+    --learning_rate_pretraining_components 0 \
+    # set weight decay
+    --weight_decay 0 \
+    --gradient_accumulation_steps 1 \
+    --lr_scheduler_type cosine \
+    --num_warmup_steps 100 \
+    --seed 1234 \
+    # please set local_rank = -1 when training in a single machine
+    --local_rank -1 \
+    # activation checkpointing for backpropagation accelaration
+    --gradient_checkpointing \
+    # stage 2 as default, stage == 3 will partition model to different devices
+    --zero_stage 2 \
+    # 16 bit precision, choose from fp32, fp16, bf16(obtain more stable training than fp16, see how to tain FLAN-T5 paper)
+    --precision bf16 \
+    # work directory
+    --work_dir ../work_dir \
+    # --enable_tensorboard
 ```
-## Evaluation 
-### COCO-captions
+## 6. Evaluation 
+### 6.1 COCO-captions
 详细介绍了COCO Caption工作
 - [Microsoft COCO Captions: Data Collection and Evaluation Server](https://www.arxiv-vanity.com/papers/1504.00325/)
 - [BLIP-2](https://github.com/salesforce/LAVIS/blob/main/dataset_card/coco_caption.md)的README.md详细介绍了metric
 - [Huggingface demo](https://github.com/huggingface/blog/blob/main/notebooks/02_how_to_generate.ipynb)介绍了generate任务
-### microsoft VQA-v2
+### 6.2 microsoft VQA-v2
 - [evaluation page](https://visualqa.org/evaluation.html)
 - [code on github](https://github.com/GT-Vision-Lab/VQA)
-### A-okvqa
+### 6.3 A-OK VQA
 - see [code](https://github.com/allenai/aokvqa/tree/main/evaluation)
-## Inference
+## 7. Inference
 - [trion compiler](https://github.com/openai/triton)
 - [trion integrated in DeepSpeed](https://github.com/microsoft/DeepSpeed/blob/master/blogs/deepspeed-triton/README.md)
+- TensorRT
+- Megatron-LM
+
+## 8. LoRA Tuning
+
+see model structure of LLaMa
 ```python
 lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",    #  attention layer in LLaMa
                    "to_q", "to_kv", "to_out",    # gate cross layer attention 
