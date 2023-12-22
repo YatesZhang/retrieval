@@ -42,7 +42,8 @@ class Runner(object):
         # DeepSpeed config:
         self.args = args
         self.zero_stage = args.zero_stage
-        
+        self.total_steps = args.total_steps
+
         # Distributed config:
         self.rank = torch.distributed.get_rank()
         self.world_size = torch.distributed.get_world_size()
@@ -52,7 +53,7 @@ class Runner(object):
         self.train_epoch = 0
         self.total_epochs = self.get_totol_epochs()
         self.total_steps = args.num_update_steps_per_epoch    # a step means a backward call
-        self.train_dataset_name = type(self.train_dataloader.dataset).__name__
+        self.train_dataset_name = type(train_dataloader.dataset).__name__
 
         # batch processor: do forward pass and return loss 
         self.batch_processor = batch_processor
@@ -189,10 +190,10 @@ class Runner(object):
             os.mkdir(save_dir)
         weight_path = osp.join(save_dir, 'loRA.pth')
         torch.save(loRA_dict, weight_path)
-        self.info_rank_zero("[rank@{rank}|{world_size}]LoRA weight saved at: {weight_path}",
+        self.info_rank_zero("[rank@{rank}|{world_size}]LoRA weight saved at: {weight_path}".format(
                    weight_path=weight_path,
                    rank=self.rank,
-                   world_size=self.world_size)
+                   world_size=self.world_size))
         return 
     
     def before_test_epoch(self):
@@ -200,7 +201,7 @@ class Runner(object):
             before test epoch hook
         """
         self.model.eval()
-        self.logger.info("[rank@{rank}|{world_size}] Start Running Test:",
+        self.info_rank_zero("[rank@{rank}|{world_size}] Start Running Test:",
                          rank=self.rank,
                          world_size=self.world_size)
         
@@ -210,9 +211,8 @@ class Runner(object):
         """
         self.step = 0
         self.model.train()
-        self.logger.info("[rank@{rank}|{world_size}][@runner.before_train_epoch] set step=0, set model.train()",
-                         rank=self.rank,
-                         world_size=self.world_size)
+        self.info_rank_zero("[rank@{rank}|{world_size}][@runner.before_train_epoch] set step=0, set model.train()".format(
+                         rank=self.rank, world_size=self.world_size))
 
     
     def after_train_epoch(self):
@@ -251,16 +251,16 @@ class Runner(object):
             after train iter hook
         """
         if self.step % 10 == 0:
-            self.info_rank_zero("[rank@{rank}|{world_size}][Epoch:{epoch}|{total_epoch}][Step:{step}|{total_step}] \
-                      Dataset: {dataset}, Loss: {loss}", 
+            self.info_rank_zero("[rank@{rank}|{world_size}][Epoch:{epoch}|{total_epoch}][Step:{step}|{total_step}] Dataset: {dataset}, Loss: {loss}".format( 
                 epoch=self.train_epoch,
                 total_epoch=self.total_epochs,
                 rank=self.rank, 
                 world_size=self.world_size,
                 step=self.step,
-                total_step=self.totol_steps,
+                total_step=self.total_steps,
                 loss=self.loss.item(),
                 dataset=self.train_dataset_name)
+                )
         return  
     
     def call_backward(self):

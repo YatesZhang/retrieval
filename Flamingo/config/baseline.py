@@ -17,11 +17,11 @@ VIS_ROOTS = [
 ]
 
 ANNO_PATHS = [
-    "/home/datasets/COCO/annotations",
+    "/home/datasets/COCO/annotations/aokvqa_v1p0_train.json",
     "/home/yunzhi/datasets/aokvqa_v1p0/aokvqa_v1p0_train.json"
 ]
 cache_dir = path_finder(CACHE_DIRS)
-lang_encoder_path = osp.join(cache_dir, "models--anas-awadalla--mpt-1b-redpajama-200b")
+lang_encoder_path = osp.join(cache_dir, "models--anas-awadalla--mpt-1b-redpajama-200b/snapshots/50d6bc94e17812873f39c36c5f815263fa71fb80")
 tokenizer_path = lang_encoder_path
 
 model_config = dict(
@@ -45,5 +45,5 @@ dataset_config = dict(
     sample_image=False,
 )
 
-workflows = [('train', 20), ('test', 1)]
+workflows = [('train', 50), ('test', 1)]
 # padded_samples = self.tokenizer.pad(x,return_tensors="pt",padding="longest",truncation=True)

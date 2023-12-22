@@ -1,5 +1,5 @@
 #!/bin/bash
-deepspeed --include=localhost:2,3,4,5 train_flamingo.py \
+deepspeed --include=localhost:1,2,3 train_flamingo.py \
     --per_device_train_batch_size 2 \
     --learning_rate 1e-5 \
     --learning_rate_pretraining_components 0 \

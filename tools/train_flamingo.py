@@ -71,11 +71,12 @@ def main():
     num_update_steps_per_epoch = math.ceil(len(train_dataloader) / args.gradient_accumulation_steps)
     args.num_update_steps_per_epoch = num_update_steps_per_epoch
 
+    args.total_steps = sum([flow[1] for flow in workflows if flow[0] == 'train']) * num_update_steps_per_epoch
     lr_scheduler = get_scheduler(
         name=args.lr_scheduler_type,    # cosine as default
         optimizer=optimizer,
         num_warmup_steps=args.num_warmup_steps,    # 100 as default
-        num_training_steps=sum([flow[1] for flow in workflows if flow[0] == 'train']) * num_update_steps_per_epoch,
+        num_training_steps=args.total_steps,
     )
     
     runner = DeepSpeedRunner(

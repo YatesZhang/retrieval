@@ -68,7 +68,7 @@ def create_model_and_transforms(
         Image processor: Pipeline to preprocess input images
         Tokenizer: A tokenizer for the language model
     """
-    # from rich import print 
+    from rich import print 
     global_rank = torch.distributed.get_rank()
     # print("gloabl_rank:", global_rank)
     print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create vision_encoder and image_processor from open_clip".format(global_rank))
