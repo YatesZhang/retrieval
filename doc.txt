@@ -7,7 +7,7 @@ git教程:
   git branch -M main
   git remote add origin https://github.com/YatesZhang/retrieval.git
   git push -u origin main
-
+  git push origin HEAD:refs/for/master
 force merge conflict:
   git reset --hard FETCH_HEAD
   git pull 
