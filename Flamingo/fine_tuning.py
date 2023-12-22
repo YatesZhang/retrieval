@@ -196,7 +196,7 @@ def main():
 
     random_seed(args.seed, args.rank)
 
-    print(f"Start running training on rank {args.rank}.")
+    print("Start running training on rank {args.rank}.")
 
     if args.rank == 0 and args.report_to_wandb:
         wandb.init(
@@ -240,7 +240,7 @@ def main():
     total_training_steps = len(train_dataloader) * args.num_epochs
 
     if args.rank == 0:
-        print(f"Total training steps: {total_training_steps}")
+        print("Total training steps: {total_training_steps}")
 
     if args.lr_scheduler == "linear":
         lr_scheduler = get_linear_schedule_with_warmup(
@@ -258,18 +258,18 @@ def main():
         lr_scheduler = get_constant_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps)
 
     # check if a checkpoint exists for this run
-    if os.path.exists(f"{args.run_name}") and args.resume_from_checkpoint is None:
-        checkpoint_list = glob.glob(f"{args.run_name}/checkpoint_*.pt")
+    if os.path.exists("{args.run_name}") and args.resume_from_checkpoint is None:
+        checkpoint_list = glob.glob("{args.run_name}/checkpoint_*.pt")
         if len(checkpoint_list) == 0:
-            print(f"Found no checkpoints for run {args.run_name}.")
+            print("Found no checkpoints for run {args.run_name}.")
         else:
             args.resume_from_checkpoint = sorted(checkpoint_list, key=lambda x: int(x.split("_")[-1].split(".")[0]))[-1]
-            print(f"Found checkpoint {args.resume_from_checkpoint} for run {args.run_name}.")
+            print("Found checkpoint {args.resume_from_checkpoint} for run {args.run_name}.")
 
     resume_from_epoch = 0
     if args.resume_from_checkpoint is not None:
         if args.rank == 0:
-            print(f"Loading checkpoint from {args.resume_from_checkpoint}")
+            print("Loading checkpoint from {args.resume_from_checkpoint}")
         checkpoint = torch.load(args.resume_from_checkpoint, map_location="cpu")
         ddp_model.load_state_dict(checkpoint["model_state_dict"], False)
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
@@ -306,21 +306,21 @@ def main():
                 "tuning_config": tuning_config,
             }
 
-            print(f"Saving checkpoint to {args.run_name}/checkpoint_{epoch}.pt")
-            torch.save(checkpoint_dict, f"{args.run_name}/checkpoint_{epoch}.pt")
+            print("Saving checkpoint to {args.run_name}/checkpoint_{epoch}.pt")
+            torch.save(checkpoint_dict, "{args.run_name}/checkpoint_{epoch}.pt")
             if args.report_to_wandb and args.save_checkpoints_to_wandb:
-                wandb.save(f"{args.run_name}/checkpoint_{epoch}.pt")
+                wandb.save("{args.run_name}/checkpoint_{epoch}.pt")
 
             if args.delete_previous_checkpoint:
                 if epoch > 0:
-                    os.remove(f"{args.run_name}/checkpoint_{epoch-1}.pt")
+                    os.remove("{args.run_name}/checkpoint_{epoch-1}.pt")
     if args.rank == 0:
         torch.save(
             {"model_state_dict": get_checkpoint(ddp_model.module), "tuning_config": tuning_config},
-            f"{args.run_name}/final_weights.pt",
+            "{args.run_name}/final_weights.pt",
         )
         if args.report_to_wandb and args.save_checkpoints_to_wandb:
-            wandb.save(f"{args.run_name}/final_weights.pt")
+            wandb.save("{args.run_name}/final_weights.pt")
 
 
 def train_one_epoch(
@@ -333,8 +333,7 @@ def train_one_epoch(
     optimizer,
     lr_scheduler,
     device_id,
-    wandb,
-):
+    wandb):
     num_batches_per_epoch = len(train_dataloader)
 
     total_training_steps = num_batches_per_epoch * args.num_epochs
@@ -444,7 +443,7 @@ def train_one_epoch(
         # Log loss to console
         if ((num_steps + 1) % args.logging_steps == 0) and args.rank == 0:
             print(
-                f"Step {num_steps+1}/{num_batches_per_epoch} of epoch {epoch+1}/{args.num_epochs} complete. Loss: {loss.item():.3f}"
+                "Step {num_steps+1}/{num_batches_per_epoch} of epoch {epoch+1}/{args.num_epochs} complete. Loss: {loss.item():.3f}"
             )
 
 

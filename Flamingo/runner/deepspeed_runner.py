@@ -28,14 +28,14 @@ from Flamingo.utils.utils import get_lora_weight_only
 """
 class Runner(object):
     def __init__(self,
-                model: torch.nn.Module,
-                train_dataloader: DataLoader,
-                test_dataloader: DataLoader,
+                model,
+                train_dataloader,
+                test_dataloader,
                 batch_processor=None, 
                 optimizer=None,
                 lr_scheduler=None, 
                 workflows=[('train', 1), ('test', 1)],
-                args=None) -> None:
+                args=None):
         """ 
             Runner for DeeoSpeed training
         """

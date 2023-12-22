@@ -47,8 +47,8 @@ work_dir = "/home/yunzhi/yunzhi/yunzhi/VLLM/retrieval/work_dir"
 enable_int8 = True
 
 dataset = load_dataset("samsum")
-print(f"Train dataset size: {len(dataset['train'])}")
-print(f"Test dataset size: {len(dataset['test'])}")
+print("Train dataset size: {}".format(len(dataset['train'])))
+print("Test dataset size: {}".format(len(dataset['test'])))
 print("model_id: ", model_id)
 
 # Load tokenizer of FLAN-t5-XL

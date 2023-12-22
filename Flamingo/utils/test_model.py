@@ -9,7 +9,7 @@ from torch import nn
 # Your Neural Network
 class ConvBlock(nn.Module):
 
-    def __init__(self, num_channels: int, layer_scale_init: float = 1e-6):
+    def __init__(self, num_channels, layer_scale_init=1e-6):
         """ 
             init 
         """
@@ -24,7 +24,7 @@ class ConvBlock(nn.Module):
         )
         self.layer_scale = nn.Parameter(torch.tensor(layer_scale_init))
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs):
         """ 
             forward
         """
@@ -34,7 +34,7 @@ class ConvBlock(nn.Module):
 
 class MyClassifier(nn.Module):
 
-    def __init__(self, in_channels: int, out_channels: int, ch_multi: int = 32):
+    def __init__(self, in_channels, out_channels, ch_multi=32):
         """ 
             init 
         """
@@ -83,7 +83,7 @@ class MyClassifier(nn.Module):
             nn.Linear(8 * ch_multi, out_channels),
         )
 
-    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+    def forward(self, inputs):
         """
             forward
         """

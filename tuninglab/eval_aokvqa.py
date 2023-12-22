@@ -17,8 +17,9 @@ def load_aokvqa(aokvqa_dir, split, version='v1p0'):
     """
     assert split in ['train', 'val', 'test', 'test_w_ans']
     dataset = json.load(open(
-        os.path.join(aokvqa_dir, f"aokvqa_{version}_{split}.json")
-    ))
+        os.path.join(aokvqa_dir,
+         "aokvqa_{version}_{split}.json".format(version=version, split=split)))
+    )
     return dataset
 
 def get_coco_path(split, image_id, coco_dir):

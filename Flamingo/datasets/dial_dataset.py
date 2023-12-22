@@ -26,7 +26,7 @@ class DialPrompter:
             res = TEMPLATE["prompt_dial"].format(question=question)
         return res
 
-    def get_response(self, output: str) -> str:
+    def get_response(self, output):
         """
             response
         """

@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 
 
-def get_cast_dtype(precision: str):
+def get_cast_dtype(precision):
     """ 
         cast
     """

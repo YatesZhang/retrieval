@@ -65,7 +65,7 @@ class NLVRv1Dataset(VQADataset):
             elif "test.json" in ann_path:
                 split = "test"
             else:
-                raise ValueError(f"Unknown split for {ann_path}")
+                raise ValueError("Unknown split for {}".format(ann_path=ann_path))
 
             with open(ann_path, "r") as f:
                 for line in f.readlines():

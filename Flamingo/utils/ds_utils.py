@@ -45,7 +45,7 @@ def get_train_ds_config(args,
         enable_fp16 = False
         enable_bf16 = True
     else:
-        raise ValueError(f"Invalid precision {args.precision}")
+        raise ValueError("Invalid precision {}".format(args.precision))
     device = "cpu" if offload else "none"
     zero_opt_dict = {
         "stage": stage,

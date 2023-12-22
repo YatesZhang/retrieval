@@ -18,15 +18,15 @@ import pdb
 
 
 def create_model_and_transforms(
-    clip_vision_encoder_path: str,
-    clip_vision_encoder_pretrained: str,
-    lang_encoder_path: str,
-    tokenizer_path: str,
-    cross_attn_every_n_layers: int = 1,
-    use_local_files: bool = False,
-    decoder_layers_attr_name: str = None,
-    freeze_lm_embeddings: bool = False,
-    cache_dir: Optional[str] = None,
+    clip_vision_encoder_path="",
+    clip_vision_encoder_pretrained="",
+    lang_encoder_path="",
+    tokenizer_path="",
+    cross_attn_every_n_layers=1,
+    use_local_files=False,
+    decoder_layers_attr_name=None,
+    freeze_lm_embeddings=False,
+    cache_dir=None,
     lora_tuning=False,
     add_eos_token=True,
     **flamingo_kwargs,
@@ -137,14 +137,14 @@ def create_model_and_transforms(
     )
 
     # load checkpoint:
-    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] load checkpoint.pt from huggingface ")
+    print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] load checkpoint.pt from huggingface ".format(global_rank=global_rank))
     checkpoint_path = hf_hub_download("openflamingo/OpenFlamingo-3B-vitl-mpt1b",
      "checkpoint.pt",
       cache_dir=cache_dir)
     # checkpoint_path = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo/checkpoint.pt"
     model.load_state_dict(torch.load(checkpoint_path), strict=False)
     
-    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] Freeze all parameters ")
+    print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] Freeze all parameters ".format(global_rank=global_rank))
     # Freeze all parameters
     model.requires_grad_(False)
     assert sum(p.numel() for p in model.parameters() if p.requires_grad) == 0
@@ -174,9 +174,11 @@ def create_model_and_transforms(
         **tuning_config
     )
     # pdb.set_trace()
-    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] LoRa tuning mode: ", lora_tuning)
+    print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] LoRa tuning mode: ".format(global_rank=global_rank),
+     lora_tuning)
     if lora_tuning:
-        print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] LoRa tuning adaptor injection: ", lora_target_modules)
+        print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] LoRa tuning adaptor injection: ".format(global_rank=global_rank),
+         lora_target_modules)
         model = get_peft_model(model, peft_config=tuning_config)
         model.print_trainable_parameters()
     # vis model: 
@@ -195,7 +197,7 @@ def create_model_and_transforms(
         # TODO: investigate also training the output embeddings when untied
 
     print(
-        f"Flamingo model initialized with {sum(p.numel() for p in model.parameters() if p.requires_grad)} trainable parameters"
+        "Flamingo model initialized with {} trainable parameters".format(sum(p.numel() for p in model.parameters() if p.requires_grad))
     )
 
     return model, image_processor, text_tokenizer
@@ -210,7 +212,7 @@ def _infer_decoder_layers_attr_name(model):
             return __KNOWN_DECODER_LAYERS_ATTR_NAMES[k]
 
     raise ValueError(
-        f"We require the attribute name for the nn.ModuleList in the decoder storing the transformer block layers. Please supply this string manually."
+        "We require the attribute name for the nn.ModuleList in the decoder storing the transformer block layers. Please supply this string manually."
     )
 
 

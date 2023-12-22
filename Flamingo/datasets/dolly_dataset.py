@@ -25,7 +25,10 @@ class LMPrompter:
         else:
             return TEMPLATE["prompt_with_input_format"].format(instruction=instruction, input=input)
 
-    def get_response(self, output: str) -> str:
+    def get_response(self, output):
+        """
+            response
+        """
         return output.split(TEMPLATE["response_split"])[-1].strip()
 
 
@@ -41,7 +44,7 @@ class DollyDataset(Dataset):
 
     """
 
-    def __init__(self, tokenizer, ann_path: str, add_eos=True, ignore_instruction=True, **kwargs):
+    def __init__(self, tokenizer, ann_path, add_eos=True, ignore_instruction=True, **kwargs):
         """
         ann_path (string): directory to store the annotation file
         """

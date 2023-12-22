@@ -40,7 +40,7 @@ class VQAPrompter:
             res = TEMPLATE["prompt_qa"].format(image="<image>", question=question)
         return res
 
-    def get_response(self, output: str) -> str:
+    def get_response(self, output):
         """ 
             response 
         """

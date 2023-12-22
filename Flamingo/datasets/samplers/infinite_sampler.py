@@ -10,7 +10,7 @@ from Flamingo.utils.distributed import world_info_from_env
 
 
 class InfiniteSampler(Sampler):
-    def __init__(self, dataset: int, shuffle: bool = True, seed: int = 0):
+    def __init__(self, dataset, shuffle=True, seed=0):
         """ 
             init
         """
