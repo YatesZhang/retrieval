@@ -159,7 +159,7 @@ class Runner(object):
             # self.work_dir
             return 
         if not os.path.exists(path):
-            raise FileNotFoundError
+            raise OSError
         
         # load state_dict:
         loRA_weight = torch.load(path)

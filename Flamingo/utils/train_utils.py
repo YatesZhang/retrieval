@@ -227,7 +227,7 @@ def train_one_epoch(
             # )
 
 
-def get_checkpoint(model: torch.nn.Module):
+def get_checkpoint(model):
     """ 
         checkpoint
     """

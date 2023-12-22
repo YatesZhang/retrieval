@@ -43,7 +43,7 @@ def imread(path):
     return np.array(Image.open(path))
 
 # @console.print_local_vars
-def pretty_print(*data_list, color="yellow", line=False):
+def pretty_print(data_list, color="yellow", line=False):
     """ 
         pretty print
     """

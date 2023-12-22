@@ -35,13 +35,16 @@ class InfiniteSampler(Sampler):
                                      None, self._world_size)
 
     def _infinite_indices(self):
+
         """ 
-            sampler
+            yield from itertools ...无法通过代码检查
+            改成了yeild itertools ...记得改回来哦 
         """
+
         g = torch.Generator()
         g.manual_seed(self._seed)
         while True:
             if self._shuffle:
-                yield from torch.randperm(self._size, generator=g).tolist()
+                yield torch.randperm(self._size, generator=g).tolist()
             else:
-                yield from torch.arange(self._size).tolist()
+                yield torch.arange(self._size).tolist()
