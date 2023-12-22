@@ -31,7 +31,7 @@ def main():
     args = parser.parse_args()
     """ 
         e.g.
-            args.destination = $ROOT/baidu/zhongce-aidata-algorithm
+            args.destination = $ROOT/baidu/zhongce-aidata-algorithm/retrieval
     """
     args.destination = os.path.abspath(args.destination, "flamingo")
     if not os.path.exists(args.destination):
