@@ -33,7 +33,7 @@ def main():
         e.g.
             args.destination = $ROOT/baidu/zhongce-aidata-algorithm/retrieval
     """
-    args.destination = os.path.abspath(args.destination, "flamingo")
+    args.destination = os.path.join(args.destination, "flamingo")
     if not os.path.exists(args.destination):
         print('create [red]{dest}[/red]'.format(dest=args.destination))
         os.makedirs(args.destination, exist_ok=True)
