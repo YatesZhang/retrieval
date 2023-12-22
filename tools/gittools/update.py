@@ -29,6 +29,11 @@ def main():
     parser.add_argument('--source', type=str, required=True)
     parser.add_argument('--destination', type=str, required=True)
     args = parser.parse_args()
+    """ 
+        e.g.
+            args.destination = $ROOT/baidu/zhongce-aidata-algorithm
+    """
+    args.destination = os.path.abspath(args.destination, "flamingo")
     if not os.path.exists(args.destination):
         print('create [red]{dest}[/red]'.format(dest=args.destination))
         os.makedirs(args.destination, exist_ok=True)

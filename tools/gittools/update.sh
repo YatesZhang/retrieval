@@ -2,6 +2,6 @@
 
 echo "flamingo: {$FLAMINGO}" 
 echo "retrieval: {$RETRIEVAL}"
-python update.py \
+python $RETRIEVAL/tools/gittools/update.py \
     --source $RETRIEVAL \
     --destination $FLAMINGO

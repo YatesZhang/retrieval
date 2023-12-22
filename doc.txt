@@ -3,6 +3,7 @@ git教程:
   git init
   git add README.md
   git commit -m "first commit"
+  git commit -m "20230619000056-1"
   git branch -M main
   git remote add origin https://github.com/YatesZhang/retrieval.git
   git push -u origin main
