@@ -174,5 +174,4 @@ def build_dolly_dataset(
     return DollyDataset(
         tokenizer=tokenizer,
         ann_path=ann_path,
-        **kwargs,
-    )
+        **kwargs)

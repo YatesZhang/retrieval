@@ -11,14 +11,15 @@ import torch
 console = Console()
 
 def print_local_vars(func):
-    """ 
-        inline function can be replaced by decorator in python:
-    """
-    def wrapper(*args, **kwargs):
-        result = func(*args, **kwargs)
-        console.print("[bold magenta]Local [/bold magenta]!", ":vampire:", locals())
-        return result
-    return wrapper
+    raise NotImplementedError
+    # """ 
+    #     inline function can be replaced by decorator in python:
+    # """
+    # def wrapper(*args, **kwargs):
+    #     result = func(*args, **kwargs)
+    #     console.print("[bold magenta]Local [/bold magenta]!", ":vampire:", locals())
+    #     return result
+    # return wrapper
 
 def vis_model(model):
     """ 

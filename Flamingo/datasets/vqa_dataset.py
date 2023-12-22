@@ -255,7 +255,7 @@ class VQADataset(Dataset):
 
 
 class ConcatDataset(ConcatDataset):
-    def __init__(self, datasets) -> None:
+    def __init__(self, datasets):
         """ 
             concat dataset
         """

@@ -68,10 +68,10 @@ def create_model_and_transforms(
         Image processor: Pipeline to preprocess input images
         Tokenizer: A tokenizer for the language model
     """
-    from rich import print 
+    # from rich import print 
     global_rank = torch.distributed.get_rank()
     # print("gloabl_rank:", global_rank)
-    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] create vision_encoder and image_processor from open_clip")
+    print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create vision_encoder and image_processor from open_clip".format(global_rank))
     vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
         clip_vision_encoder_path,    # "ViT-L-14"
         pretrained=clip_vision_encoder_pretrained,    # "openai"
@@ -79,7 +79,7 @@ def create_model_and_transforms(
     )
     # set the vision encoder to output the visual features
     vision_encoder.visual.output_tokens = True
-    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] create text_tokenizer")
+    print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create text_tokenizer".format(global_rank))
     text_tokenizer = AutoTokenizer.from_pretrained(
         tokenizer_path,
         local_files_only=use_local_files,
@@ -95,7 +95,7 @@ def create_model_and_transforms(
         # modify labels for the loss.
         text_tokenizer.add_special_tokens({"pad_token": "<PAD>"})
 
-    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] create LLM from ", lang_encoder_path)
+    print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create LLM from ".format(global_rank), lang_encoder_path)
     lang_encoder = AutoModelForCausalLM.from_pretrained(
         lang_encoder_path,
         local_files_only=use_local_files,
@@ -122,7 +122,8 @@ def create_model_and_transforms(
     lang_encoder.set_decoder_layers_attr_name(decoder_layers_attr_name)
     lang_encoder.resize_token_embeddings(len(text_tokenizer))
 
-    print(f"[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] create Flamingo with cross_attn_every_n_layers=", cross_attn_every_n_layers)
+    print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create Flamingo with cross_attn_every_n_layers=".format(global_rank),
+           cross_attn_every_n_layers)
     model = Flamingo(
         vision_encoder,
         lang_encoder,
@@ -132,8 +133,7 @@ def create_model_and_transforms(
             "width"
         ],
         cross_attn_every_n_layers=cross_attn_every_n_layers,
-        **flamingo_kwargs,
-    )
+        **flamingo_kwargs)
 
     # load checkpoint:
     print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] load checkpoint.pt from huggingface ".format(global_rank=global_rank))

@@ -150,7 +150,7 @@ class Runner(object):
                 workflow_fn()
         return 
     
-    def resume(self, path: Optional[str] = None, load_optim=False):
+    def resume(self, path=None, load_optim=False):
         """ 
             resume from checkpoint:
             activated in each rank 
