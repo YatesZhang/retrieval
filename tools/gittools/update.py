@@ -9,10 +9,18 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "rich", "-i", "https://mirrors.aliyun.com/pypi/simple/"])
 from rich import print
 
+exclude = ['git',
+            'tuninglab']
+def check_exclude(path):
+    for prefix in exclude:
+        if prefix in path:
+            return True
+    return False
+
 def copy_files(source, destination):
     for item in os.listdir(source):
         item_path = os.path.join(source, item)
-        if item.startswith('.') or 'git' in item:
+        if item.startswith('.') or check_exclude(item_path):
             print('skip [yellow]{item}[/yellow]'.format(item=item_path))
             continue
         if os.path.isfile(item_path):

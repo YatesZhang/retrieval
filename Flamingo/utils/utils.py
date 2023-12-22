@@ -5,17 +5,17 @@ import torch
 import os.path as osp 
 from deepspeed import zero
 from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus 
-from rich import print 
+from rich.console import Console
 
 
-def path_finder(PATHS: list):
+def path_finder(PATHS):
     """
         auto find path in PATHS
     """
     for path in PATHS:
         if osp.exists(path):
             return path
-    raise FileNotFoundError(f"path {path} not found")
+    raise FileNotFoundError("path {} not found".format(path))
 
 def maybe_zero_3(param):
     """ 

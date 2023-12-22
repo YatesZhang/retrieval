@@ -29,8 +29,7 @@ def create_model_and_transforms(
     cache_dir=None,
     lora_tuning=False,
     add_eos_token=True,
-    **flamingo_kwargs,
-):
+    **flamingo_kwargs):
     """
     Initialize a Flamingo model from a pretrained vision encoder and language encoder.
     Appends special tokens to the tokenizer and freezes backbones.

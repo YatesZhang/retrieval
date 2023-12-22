@@ -143,7 +143,7 @@ class Runner(object):
         for flow, epochs in self.workflows:
             assert flow in ['train', 'test']
             workflow_fn = getattr(self, flow)
-            self.info_rank_zero(f"WORKFLOW: {flow}, EPOCHS: {epochs}")
+            self.info_rank_zero("WORKFLOW: {}, EPOCHS: {}".format(flow, epochs))
             for _ in range(epochs):
                 if flow == 'train':
                     self.train_epoch += 1
@@ -229,7 +229,8 @@ class Runner(object):
             after test step hook
         """
         if self.step % 10 == 0:
-            self.logger.info("[Step:{:<3}|{}] Generate Embeddings for Image in Test Set".format(str(step),len(self.test_loader)))
+            self.logger.info("[Step:{:<3}|{}] Generate Embeddings for Image in Test Set".format(str(self.step),
+                                len(self.test_loader)))
         pass
 
     def after_test_epoch(self):

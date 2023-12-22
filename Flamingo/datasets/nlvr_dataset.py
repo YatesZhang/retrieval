@@ -83,7 +83,7 @@ class NLVRv1Dataset(VQADataset):
         """
         image_list = defaultdict(list)
         for ann in annotation:
-            img_key = f"{ann['split']}-{ann['identifier']}"
+            img_key = "{}-{}".format(ann['split'],ann['identifier'])
             image_list[img_key].append(ann)
         annotation = []
         for ann_list in image_list.values():
@@ -111,7 +111,7 @@ class NLVRv1Dataset(VQADataset):
         # each question have 6 images, we can random select one of them.
         # TODO: check whether using all 6 images?
         random_id = random.randint(0, 5)
-        image_name = f"{ann['split']}-{ann['identifier']}-{random_id}.png"
+        image_name = "{}-{}-{}.png".format(ann['split'], ann['identifier'], random_id)
         image_path = os.path.join(self.vis_root, ann["split"], "images", ann["directory"], image_name)
         image = Image.open(image_path).convert("RGB")
 
@@ -221,8 +221,7 @@ def build_nlvrv1_dataset(
     vis_processor,
     vis_root="data/nlvr",
     ann_paths=["data/nlvr//train/train.json"],
-    sample_image=False,
-):
+    sample_image=False):
     """ 
         build dataset
     """

@@ -167,8 +167,7 @@ class DollyDataset(Dataset):
 def build_dolly_dataset(
     tokenizer,
     ann_path="data/dolly/databricks-dolly-15k.jsonl",
-    **kwargs,
-):
+    **kwargs):
     """ 
         build dataset
     """
