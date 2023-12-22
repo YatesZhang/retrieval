@@ -49,8 +49,7 @@ def main():
     dataset = build_dataset(
         dataset_config=dataset_config,
         vis_processor=image_processor,
-        tokenizer=tokenizer,
-    )
+        tokenizer=tokenizer)
 
     # dataloader: true batch_size is train_micro_batch_size_per_gpu
     train_dataloader = DataLoader(
