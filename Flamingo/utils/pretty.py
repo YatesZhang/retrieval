@@ -1,7 +1,7 @@
 
 """ 常用函数 """
 import json 
-from termcolor import cconsole.print
+from termcolor import cprint
 from PIL import Image
 import numpy as np
 from typing import List, Optional
@@ -9,6 +9,7 @@ from bigmodelvis import Visualization
 from rich.console import Console
 import torch 
 console = Console()
+
 def print_local_vars(func):
     """ 
         inline function can be replaced by decorator in python:
@@ -46,14 +47,14 @@ def pretty_print(*data_list, color="yellow", line=False):
         pretty print
     """
     if line:
-        console.print("-------------------------------------------------", color=color)
+        cprint("-------------------------------------------------", color=color)
     for data in data_list:  
         if isinstance(data, str):
-            console.print(data, color)
+            cprint(data, color)
         else:
             data = json.dumps(data, indent=2)
             data = data.replace("\"", "").replace(":"," =")
-            console.print(data, color)
+            cprint(data, color)
     return 
 
 
