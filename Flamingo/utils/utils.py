@@ -11,11 +11,12 @@ from rich.console import Console
 def path_finder(PATHS):
     """
         auto find path in PATHS
+        代码检查无法通过FileNotFoundError
     """
     for path in PATHS:
         if osp.exists(path):
             return path
-    raise FileNotFoundError("path {} not found".format(path))
+    raise OSError("path {} not found".format(path))
 
 def maybe_zero_3(param):
     """ 
