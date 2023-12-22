@@ -20,7 +20,7 @@ from .nlvr_dataset import NLVRv1Dataset, NLVRv2Dataset  # noqa: F401
 from .ocr_vqa_dataset import OCRVQADataset  # noqa: F401
 from .snli_ve_datasets import SNLIVEDataset  # noqa: F401
 from .text_ocr_dataset import TextOCRDataset  # noqa: F401
-from .vqa_dataset import ConcatDataset, VQADataset  # noqa: F401
+from .vqa_dataset import MyConcatDataset, VQADataset  # noqa: F401
 from .baize_dataset import BaiZeDataset  # noqa: F401
 
 
@@ -30,7 +30,7 @@ def build_dataset(dataset_config, vis_processor, tokenizer):
     """
     if isinstance(dataset_config, list):
         datasets = [build_dataset(cfg, vis_processor=vis_processor, tokenizer=tokenizer) for cfg in dataset_config]
-        return ConcatDataset(datasets)
+        return MyConcatDataset(datasets)
     dataset_type = dataset_config.pop("type")
     sample = dataset_config.pop("sample", -1)
     if dataset_type == "llava":

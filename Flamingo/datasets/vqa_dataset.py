@@ -254,13 +254,13 @@ class VQADataset(Dataset):
         }
 
 
-class ConcatDataset(Dataset):
+class MyConcatDataset(ConcatDataset):
     def __init__(self, datasets):
         """ 
             concat dataset
         """
-        self.dataset = datasets
-        # super().__init__(datasets)
+        # self.dataset = datasets
+        super().__init__(datasets)
 
     def collater(self, samples):
         """ 
@@ -282,14 +282,14 @@ class ConcatDataset(Dataset):
 
         return self.datasets[0].collater(samples_shared_keys)
     
-    def __getitem__(self, index):
-        """ 
-            index
-        """
-        raise NotImplementedError
+    # def __getitem__(self, index):
+    #     """ 
+    #         index
+    #     """
+    #     raise NotImplementedError
     
-    def __len__(self):
-        """
-            len
-        """
-        raise NotImplementedError
+    # def __len__(self):
+    #     """
+    #         len
+    #     """
+    #     raise NotImplementedError

@@ -10,7 +10,8 @@ except ImportError:
 from rich import print
 
 exclude = ['git',
-            'tuninglab']
+        'tuninglab',
+        'finetuning.py']
 def check_exclude(path):
     for prefix in exclude:
         if prefix in path:
