@@ -99,7 +99,7 @@ deepspeed --include=localhost:2,3,4,5 train_flamingo.py \
 - [trion integrated in DeepSpeed](https://github.com/microsoft/DeepSpeed/blob/master/blogs/deepspeed-triton/README.md)
 - TensorRT
 - Megatron-LM
-
+- [DeepSpeed inference](https://github.com/microsoft/DeepSpeed/blob/master/docs/_tutorials/inference-tutorial.md)
 ## 8. LoRA Tuning
 
 see model structure of LLaMa
