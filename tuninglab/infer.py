@@ -5,6 +5,7 @@ import pdb
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import torch 
 from transformers import AutoModelForSeq2SeqLM
+from rich import print
 
 
 """
@@ -23,7 +24,11 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
 model = model.half()
 model = model.cuda()
-instruction = "tell me some information about China"
-seq = to_cuda(data=tokenizer(instruction, return_tensors="pt"), device=model.device)
-instruction = tokenizer.decode(model.generate(**seq)[0], skip_special_tokens=False)
+print(model.encoder.block[0].layer[0].SelfAttention.q.weight)
+instruction = ["tell me some information about China", "What is USA? "]
+seq = to_cuda(data=tokenizer(instruction, return_tensors="pt", padding="longest"), device=model.device)
+print("[@rank{rank}] seq: {seq}, type: {T}".format(rank=-1, seq=str(seq), T=type(seq).__name__))
+samples = model.generate(**seq)
+# instruction = tokenizer.decode(samples, skip_special_tokens=False)
+print("[@rank{rank}] instruction : {instruction}".format(rank=-1, instruction=instruction))
 pdb.set_trace()

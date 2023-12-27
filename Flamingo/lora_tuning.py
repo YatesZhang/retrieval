@@ -69,7 +69,11 @@ def create_model_and_transforms(
         Tokenizer: A tokenizer for the language model
     """
     from rich import print 
-    global_rank = torch.distributed.get_rank()
+    global_rank = -1
+    try: 
+        global_rank = torch.distributed.get_rank()
+    except RuntimeError:
+        print("[yellow]Flamingo will use single GPU or CPU[/yellow]")
     # print("gloabl_rank:", global_rank)
     print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create vision_encoder and image_processor from open_clip".format(global_rank))
     vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
