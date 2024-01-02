@@ -3,7 +3,7 @@
     test: 
         A-OK VQA
 """
-
+from transformers import OPTPreTrainedModel
 from Flamingo.datasets.builder import build_dataset 
 from Flamingo.config.baseline import dataset_config, model_config
 from Flamingo.utils.pretty import pretty_print 
@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 import torch 
 import pdb 
 import deepspeed
+from rich import print 
 # torch.cuda.current_device()
 # from transformers.models
 model_config = dict(
@@ -33,6 +34,26 @@ dataset_config = dict(
     sample_image=False,
 )
 
+class FewShotPromptAOKVQA(object):
+    def __init__(self, batch, tokenizer, num_samples=2):
+        lang_x_prompt = ""
+        for i in range(num_samples):
+            prompt_text = tokenizer.decode(batch['input_ids'][i])
+            assert prompt_text.endswith('<|endoftext|>')
+            lang_x_prompt += prompt_text
+        for i in range(num_samples, len(batch['input_ids'])):
+            lang_x_prompt += batch['instruction'][i]
+            # instruction = self.tokenizer(batch['instruction'], padding='longest', return_tensors='pt')
+        self.lang_x_prompt = tokenizer(lang_x_prompt, padding='longest', return_tensors='pt')
+        # [B, C, H, W] -> [B, 1, C, H, W] -> [1, B, F=1, C, H, W] 
+        self.vision_x_prompt = batch['image'].unsqueeze(1).unsqueeze(0)
+    
+    def data(self):
+        return dict(
+            input_ids=self.lang_x_prompt['input_ids'],
+            attention_mask=self.lang_x_prompt['attention_mask'],
+            image=self.vision_x_prompt
+        ) 
 
 if __name__ == "__main__":
     model, image_processor, tokenizer = create_model_and_transforms(
@@ -88,8 +109,10 @@ if __name__ == "__main__":
     model = ds_engine.module
     base_model = model.base_model.model
     # pdb.set_trace()
-    dataloader = DataLoader(dataset=dataset, batch_size=1, collate_fn=dataset.collater)
+    dataloader = DataLoader(dataset=dataset, batch_size=3, collate_fn=dataset.collater)
     batch_processor = FlamingoBatchProcessor(tokenizer=tokenizer, cast_type=torch.float16)
+
+    
     with torch.no_grad():
         for data in dataloader:
             # for i in range(len(data['instruction'])):
@@ -101,8 +124,9 @@ if __name__ == "__main__":
             # label = label[label > 0]    # [-100] padding
             # print(tokenizer.decode(label))
             # TEMPLATE = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
-            # pdb.set_trace()
-            output = batch_processor(model, data, mode='test')
+            pdb.set_trace()
+            prompter = FewShotPromptAOKVQA(data, tokenizer, num_samples=2)
+            output = batch_processor(model, prompter.data(), mode='test')
             pdb.set_trace()
 """
 

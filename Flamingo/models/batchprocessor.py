@@ -34,7 +34,7 @@ class FlamingoBatchProcessor(object):
         device = next(model.parameters()).device
         return device  
     
-    def process_batch(self, model, batch):
+    def process_batch(self, model, batch, few_shot_prompt=None):
         """ 
             training phase
         """
@@ -66,13 +66,12 @@ class FlamingoBatchProcessor(object):
             batch['labels']    : [2, 151]
         """
         device = self.get_device(model=model) 
-        images = batch["image"].to(device, dtype=self.cast_type, non_blocking=True).unsqueeze(1).unsqueeze(1)
-        # instruction = self.tokenizer("<|endofchunk|><image> the color is", padding='longest', return_tensors='pt')
-        for i in range(len(batch['instruction'])):
-            batch['instruction'][i] = batch['instruction'][i].split('### Response:')[0].strip()
-        instruction = self.tokenizer(batch['instruction'], padding='longest', return_tensors='pt')
-        input_ids = instruction['input_ids'].to(device, dtype=torch.long, non_blocking=True)
-        attention_mask = instruction["attention_mask"].to(device, dtype=torch.long,  non_blocking=True)
+        images = batch["image"].to(device, dtype=self.cast_type, non_blocking=True)
+        if len(images.shape) == 4:
+            images = images.unsqueeze(1).unsqueeze(1)
+        
+        input_ids = batch['input_ids'].to(device, dtype=torch.long, non_blocking=True)
+        attention_mask = batch["attention_mask"].to(device, dtype=torch.long,  non_blocking=True)
         # labels = batch["labels"].to(device, dtype=torch.long, non_blocking=True)
 
         generated_text = model.generate(

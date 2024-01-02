@@ -12,3 +12,4 @@ llama-2-7b
 core.*
 *.log
 *.pth
+test.*

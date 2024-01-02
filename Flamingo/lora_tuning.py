@@ -16,6 +16,21 @@ from bigmodelvis import Visualization
 from huggingface_hub import hf_hub_download
 import pdb 
 
+def get_tokenizer(
+    tokenizer_path,
+    cache_dir,
+    use_local_files=False,
+):
+    """
+        get tokenizer
+    """
+    text_tokenizer = AutoTokenizer.from_pretrained(
+    tokenizer_path,
+    local_files_only=use_local_files,
+    trust_remote_code=True,
+    cache_dir=cache_dir)
+    return text_tokenizer
+
 
 def create_model_and_transforms(
     clip_vision_encoder_path="",
