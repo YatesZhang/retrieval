@@ -14,6 +14,7 @@ from open_flamingo.src.flamingo_lm import FlamingoLMMixin
 from open_flamingo.src.utils import extend_instance
 from bigmodelvis import Visualization
 from huggingface_hub import hf_hub_download
+from Flamingo.models.decoupled_flamingo import DecoupledFlamingo
 import pdb 
 
 def get_tokenizer(
@@ -44,6 +45,7 @@ def create_model_and_transforms(
     cache_dir=None,
     lora_tuning=False,
     add_eos_token=True,
+    decoupled=False, 
     **flamingo_kwargs):
     """
     Initialize a Flamingo model from a pretrained vision encoder and language encoder.
@@ -127,7 +129,6 @@ def create_model_and_transforms(
         class EmbeddingFnMixin:
             def get_input_embeddings(self):
                 return self.transformer.wte
-
             def set_input_embeddings(self, new_embeddings):
                 self.transformer.wte = new_embeddings
 
@@ -143,17 +144,28 @@ def create_model_and_transforms(
 
     print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create Flamingo with cross_attn_every_n_layers=".format(global_rank),
            cross_attn_every_n_layers)
-    model = Flamingo(
-        vision_encoder,
-        lang_encoder,
-        text_tokenizer.encode("<|endofchunk|>")[-1],
-        text_tokenizer.encode("<image>")[-1],
-        vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"][
-            "width"
-        ],
-        cross_attn_every_n_layers=cross_attn_every_n_layers,
-        **flamingo_kwargs)
-
+    if not decoupled:
+        model = Flamingo(
+            vision_encoder,
+            lang_encoder,
+            text_tokenizer.encode("<|endofchunk|>")[-1],
+            text_tokenizer.encode("<image>")[-1],
+            vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"][
+                "width"
+            ],
+            cross_attn_every_n_layers=cross_attn_every_n_layers,
+            **flamingo_kwargs)
+    else:
+        model = DecoupledFlamingo(
+            lang_encoder,
+            text_tokenizer.encode("<|endofchunk|>")[-1],
+            text_tokenizer.encode("<image>")[-1],
+            vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"][
+                "width"
+            ],
+            cross_attn_every_n_layers=cross_attn_every_n_layers,
+            **flamingo_kwargs
+        )
     # load checkpoint:
     print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] load checkpoint.pt from huggingface ".format(global_rank=global_rank))
     checkpoint_path = hf_hub_download("openflamingo/OpenFlamingo-3B-vitl-mpt1b",

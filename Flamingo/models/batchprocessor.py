@@ -16,7 +16,6 @@ class FlamingoBatchProcessor(object):
 
             usage: 
                 train: 
-
         """
         self.tokenizer = tokenizer 
         self.cast_type = cast_type
