@@ -4,8 +4,37 @@
 from typing import Any
 import torch 
 from rich import print
+import numpy as np 
+from PIL import Image
 import pdb 
 
+def img_auto_cast(imgs):
+    """ 
+        clip vision_encoder's image processor accept Pillow image only
+    """
+
+    if isinstance(imgs, np.ndarray):
+        return Image.fromarray(imgs)
+    if isinstance(imgs, Image):
+        return imgs 
+    if isinstance(imgs, list):
+        return [img_auto_cast(img) for img in imgs]
+    if isinstance(imgs, torch.Tensor):
+        """ 
+            directly return a torch Tensor
+        """
+        return imgs 
+    if isinstance(imgs, dict):
+        possible_key_list = [
+            'img', 'image', 'imgs', 'images'
+        ]
+        for img_key in possible_key_list:
+            has_key = img_key in imgs 
+            if has_key:
+                return imgs[img_key]
+            else:
+                continue 
+        raise KeyError("{} should in dict input!".format(str(possible_key_list)))
 
 # from torch.cuda.amp import autocast
 class FlamingoBatchProcessor(object):
@@ -97,3 +126,94 @@ class FlamingoBatchProcessor(object):
             return self.inference(model, batch)
         else:   # inference:
             raise NotImplementedError
+        
+
+class CLIPBatchProcessor(object):
+    def __init__(self, vision_encoder, image_processor):
+        """
+        usage:
+            clip_vision_encoder_path="ViT-L-14"
+            clip_vision_encoder_pretrained="openai"
+            cross_attn_every_n_layers=1
+            cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
+            vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
+                clip_vision_encoder_path,    # "ViT-L-14"
+                pretrained=clip_vision_encoder_pretrained,    # "openai"
+                cache_dir=cache_dir,
+            )
+
+            batch_processor = CLIPBatchProcessor(vision_encoder, image_processor)
+        """
+        # set the vision encoder to output the visual features
+        vision_encoder.visual.output_tokens = True
+        self.vision_encoder = vision_encoder.visual 
+        self.image_processor = image_processor
+    
+    def get_device(self, model):
+        """
+            get model's device
+        """
+        if hasattr(model, 'device'):
+            return model.device 
+        device = next(model.parameters()).device
+        return device  
+    
+    def img_auto_collect(self, imgs):
+        """ 
+            accept input from img_auto_cast
+            auto ignore Tensor input when calling image_processor
+            input type: 
+                list: [PIL.Image]
+                PIL.Image
+            output:
+                Tensor of shape: [B, C, H, W]
+        """
+        if isinstance(imgs, Image):
+            """ 
+                PIL.Image -> Tensor [C, H, W] -> [1, C, H, W]
+            """
+            imgs = self.image_processor(imgs)
+            return imgs[None, ...]
+
+        if isinstance(imgs, torch.Tensor):
+            """ 
+                ignore imgs input
+            """
+            if len(imgs.shape) == 3:
+                # [C, H, W]
+                imgs = imgs[None, ...]
+            assert imgs.shape == 4, "Tensor of imgs should be [C, H, W] or [B, C, H, W]!"
+            return imgs 
+
+        if isinstance(imgs, list):
+            """
+                [PIL.Image] -> Tensor [B, C, H, W]
+            """
+            imgs = [self.image_processor(img)for img in imgs]
+            return torch.cat(imgs, dim=0)
+        
+        raise TypeError("input type should be PIL, not {}".format(type(imgs).__name__))
+    
+    def __call__(self, imgs):
+        """
+        support: 
+        single: 
+            read Pillow Image
+            numpy image
+        batch:
+            from list of Pillow Image or ndarray
+            from [B, C, H, W]
+            
+        """
+        # get imgs:
+        imgs = img_auto_cast(imgs)
+        imgs = self.img_auto_collect(imgs)
+        assert isinstance(imgs, torch.Tensor) and len(imgs.shape) == 4 
+        
+        # to device:
+        device = self.get_device(model=self.vision_encoder)
+        imgs = imgs.to(device)
+
+        with 
+        out = self.vision_encoder(imgs)
+        return 
