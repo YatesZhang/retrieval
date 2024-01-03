@@ -148,7 +148,10 @@ class CLIPBatchProcessor(object):
         vision_encoder.visual.output_tokens = True
         self.vision_encoder = vision_encoder.visual 
         self.image_processor = image_processor
-    
+        
+        # evaluate mode
+        self.vision_encoder.eval()
+
     def get_device(self, model):
         """
             get model's device
@@ -194,6 +197,7 @@ class CLIPBatchProcessor(object):
         
         raise TypeError("input type should be PIL, not {}".format(type(imgs).__name__))
     
+    @torch.inference_mode()
     def __call__(self, imgs):
         """
         support: 
@@ -213,7 +217,12 @@ class CLIPBatchProcessor(object):
         # to device:
         device = self.get_device(model=self.vision_encoder)
         imgs = imgs.to(device)
-
-        with 
-        out = self.vision_encoder(imgs)
-        return 
+        """ 
+        vision_encoder:
+            vision_encoder(img)[0].shape: torch.Size([1, 768])
+            vision_encoder(img)[1].shape: torch.Size([1, 256, 1024])
+        """
+        out = self.vision_encoder(imgs)[1]
+        # out shape: (B, T, F) v, d == [B, 1, 1, v, d]
+        out = out.unsqueeze(1).unsqueeze(1) 
+        return out 
