@@ -15,7 +15,7 @@ def img_auto_cast(imgs):
 
     if isinstance(imgs, np.ndarray):
         return Image.fromarray(imgs)
-    if isinstance(imgs, Image):
+    if isinstance(imgs, Image.Image):
         return imgs 
     if isinstance(imgs, list):
         return [img_auto_cast(img) for img in imgs]
@@ -145,8 +145,13 @@ class CLIPBatchProcessor(object):
             batch_processor = CLIPBatchProcessor(vision_encoder, image_processor)
         """
         # set the vision encoder to output the visual features
-        vision_encoder.visual.output_tokens = True
-        self.vision_encoder = vision_encoder.visual 
+        
+        if hasattr(vision_encoder, 'visual'):
+            vision_encoder.visual.output_tokens = True
+            self.vision_encoder = vision_encoder.visual 
+        else:
+            vision_encoder.output_tokens = True 
+            self.vision_encoder = vision_encoder
         self.image_processor = image_processor
         
         # evaluate mode
@@ -171,7 +176,7 @@ class CLIPBatchProcessor(object):
             output:
                 Tensor of shape: [B, C, H, W]
         """
-        if isinstance(imgs, Image):
+        if isinstance(imgs, Image.Image):
             """ 
                 PIL.Image -> Tensor [C, H, W] -> [1, C, H, W]
             """
@@ -192,7 +197,13 @@ class CLIPBatchProcessor(object):
             """
                 [PIL.Image] -> Tensor [B, C, H, W]
             """
-            imgs = [self.image_processor(img)for img in imgs]
+            imgs = [self.image_processor(img) for img in imgs]
+            if len(imgs[0].shape) == 3:
+                imgs = [img[None, ...] for img in imgs]
+            elif len(imgs[0].shape) == 4:
+                pass 
+            else:
+                raise ValueError
             return torch.cat(imgs, dim=0)
         
         raise TypeError("input type should be PIL, not {}".format(type(imgs).__name__))

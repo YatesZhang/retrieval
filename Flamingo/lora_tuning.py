@@ -19,7 +19,7 @@ import pdb
 
 def get_tokenizer(
     tokenizer_path,
-    cache_dir,
+    cache_dir="/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo",
     use_local_files=False,
 ):
     """
