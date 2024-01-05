@@ -40,7 +40,7 @@ def build_dataset(dataset_config, vis_processor, tokenizer):
             **dataset_config
         )
     elif dataset_type == 'gtsrb':
-        datasets = GTSRB(
+        dataset = GTSRB(
             tokenizer=tokenizer, 
             **dataset_config             
         )

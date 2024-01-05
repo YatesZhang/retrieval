@@ -61,5 +61,5 @@ dataset_config = dict(
     test_path='/home/yunzhi/yunzhi/datasets',
     mode='train'
 )
-workflows = [('train', 50), ('test', 1)]
+workflows = [('train', 100), ('test', 1)]
 # padded_samples = self.tokenizer.pad(x,return_tensors="pt",padding="longest",truncation=True)

@@ -17,7 +17,6 @@ IMG_HEIGHT = 224
 IMG_WIDTH = 224
 channels = 3
 NUM_CATEGORIES = len(os.listdir(train_path))
-print(NUM_CATEGORIES)
 
 # Label Overview
 classes = { 0:'Speed limit (20km/h)',
@@ -63,7 +62,6 @@ classes = { 0:'Speed limit (20km/h)',
             40:'Roundabout mandatory', 
             41:'End of no passing', 
             42:'End no passing veh > 3.5 tons' }
-print(classes)
         
 def collate_fn(batch):
     imgs = []
@@ -188,7 +186,6 @@ class GTSRB(Dataset):
             label = classes[cat]
             img_dir = os.path.join(self.train_path, str(cat))
             img_names = glob(os.path.join(img_dir, "*.png.pth"))
-            # print(img_dir, img_names)
             for name in img_names:
                 data_info = dict(
                     path=os.path.join(img_dir, name),
