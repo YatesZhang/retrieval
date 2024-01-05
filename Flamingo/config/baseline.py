@@ -25,6 +25,15 @@ cache_dir = path_finder(CACHE_DIRS)
 lang_encoder_path = "facebook/opt-125m"
 tokenizer_path = lang_encoder_path
 
+# model_config = dict(
+#     clip_vision_encoder_path="ViT-L-14",
+#     clip_vision_encoder_pretrained="openai",
+#     lang_encoder_path=lang_encoder_path,
+#     tokenizer_path=tokenizer_path,
+#     cross_attn_every_n_layers=1,
+#     cache_dir = cache_dir,
+#     lora_tuning=True  
+# )
 model_config = dict(
     clip_vision_encoder_path="ViT-L-14",
     clip_vision_encoder_pretrained="openai",
@@ -32,9 +41,9 @@ model_config = dict(
     tokenizer_path=tokenizer_path,
     cross_attn_every_n_layers=1,
     cache_dir = cache_dir,
-    lora_tuning=True  
+    lora_tuning=False,
+    decoupled=True  
 )
-
 #
 vis_root = path_finder(VIS_ROOTS)
 anno_path = path_finder(ANNO_PATHS)

@@ -137,13 +137,16 @@ class DecoupledFlamingoBatchProcessor(FlamingoBatchProcessor):
         """
         device = self.get_device(model=model)
         
-        images = batch["image"].to(device, dtype=self.cast_type, non_blocking=True).unsqueeze(1).unsqueeze(1)
+        """
+            vision_x : [B, T, F, V, D]
+        """
+        vision_x = batch["vision_x"].to(device, dtype=self.cast_type, non_blocking=True)
         input_ids = batch["input_ids"].to(device, dtype=torch.long,  non_blocking=True)
         attention_mask = batch["attention_mask"].to(device, dtype=torch.long,  non_blocking=True)
         labels = batch["labels"].to(device, dtype=torch.long, non_blocking=True)
         
         loss = model(
-                vision_x=images,
+                vision_x=vision_x,
                 lang_x=input_ids,
                 attention_mask=attention_mask,
                 labels=labels

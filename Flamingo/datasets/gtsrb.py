@@ -92,7 +92,7 @@ class GTSRB(Dataset):
         self.data_infos = []
         self.tokenizer = tokenizer
         self.image_processor = image_processor
-        print("load annos:")
+        # print("load annos:")
         self.load_annotations()
 
         # set up labels; language model is expected to handle shifting
@@ -114,7 +114,8 @@ class GTSRB(Dataset):
         """
 
         imgs = []
-        labels = [] 
+        text_labels = [] 
+        paths = []
         input_ids = []
         attention_mask = []
         for sample in samples:
@@ -144,7 +145,8 @@ class GTSRB(Dataset):
 
             # add text template
             label = f"<image>Output:{label}<|endofchunk|>{self.tokenizer.eos_token}"
-            labels.append(label)
+            text_labels.append(label)
+            paths.append(sample['path'])
             batch_encoding = self.tokenizer(label,
                                             max_length=32,
                                             padding="max_length",
@@ -168,6 +170,10 @@ class GTSRB(Dataset):
 
         imgs = torch.cat(imgs, dim=0)
         result = dict(
+            meta=dict(
+                text_labels=text_labels,
+                paths=paths
+            ),
             vision_x=imgs, 
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -197,7 +203,7 @@ class GTSRB(Dataset):
         label = data_info['label']
         if path.endswith(".pth"):
             imread = torch.load
-        elif path.endswith(".png"):
+        elif path.endswith(".png") or path.endswith(".jpg"):
             imread = Image.open 
         else:
             raise RuntimeError
