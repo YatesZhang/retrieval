@@ -127,7 +127,33 @@ class FlamingoBatchProcessor(object):
         else:   # inference:
             raise NotImplementedError
         
+class DecoupledFlamingoBatchProcessor(FlamingoBatchProcessor):
+    def __init__(self, tokenizer=None, cast_type=torch.bfloat16, num_beams=3, max_new_tokens=20):
+        super().__init__(tokenizer=tokenizer, cast_type=cast_type, num_beams=num_beams, max_new_tokens=max_new_tokens)
 
+    def process_batch(self, model, batch, few_shot_prompt=None):
+        """ 
+            training phase
+        """
+        device = self.get_device(model=model)
+        
+        images = batch["image"].to(device, dtype=self.cast_type, non_blocking=True).unsqueeze(1).unsqueeze(1)
+        input_ids = batch["input_ids"].to(device, dtype=torch.long,  non_blocking=True)
+        attention_mask = batch["attention_mask"].to(device, dtype=torch.long,  non_blocking=True)
+        labels = batch["labels"].to(device, dtype=torch.long, non_blocking=True)
+        
+        loss = model(
+                vision_x=images,
+                lang_x=input_ids,
+                attention_mask=attention_mask,
+                labels=labels
+            )[0]
+        
+        # sum loss: 
+        loss = loss.sum() 
+        # loss /= self.gradient_accumulation_steps 
+        return loss
+       
 class CLIPBatchProcessor(object):
     def __init__(self, vision_encoder, image_processor):
         """

@@ -119,6 +119,8 @@ class GTSRB(Dataset):
     
     def __len__(self):
         return len(self.data_infos)
+    
+    
 dataset = GTSRB()
 
 
@@ -159,4 +161,3 @@ for data in tqdm(dataloader):
     for i in range(len(paths)):
         path = paths[i] + ".pth"
         torch.save(out[i][None, ...].cpu(),path)
-    

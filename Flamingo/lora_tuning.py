@@ -123,7 +123,9 @@ def create_model_and_transforms(
         trust_remote_code=True,
         cache_dir=cache_dir,
     )
-
+    
+    # import pdb 
+    # pdb.set_trace()
     # hacks for MPT-1B, which doesn't have a get_input_embeddings method
     if "mpt-1b-redpajama-200b" in lang_encoder_path:
         class EmbeddingFnMixin:
@@ -223,8 +225,9 @@ def create_model_and_transforms(
         # TODO: investigate also training the output embeddings when untied
     num_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     num_trainable_params = num_trainable_params / (1024 * 1024)
+    num_trainable_params = int(num_trainable_params)
     print(
-        "Flamingo model initialized with {}MB trainable parameters".format(num_trainable_params)
+        "Flamingo model initialized with [green]{}MB[/green] trainable parameters".format(num_trainable_params)
     )
 
     return model, image_processor, text_tokenizer
@@ -244,6 +247,7 @@ def _infer_decoder_layers_attr_name(model):
 
 
 __KNOWN_DECODER_LAYERS_ATTR_NAMES = {
+    # "bertlmheadmodel":"bert.encoder.layer",
     "opt": "model.decoder.layers",
     "gptj": "transformer.h",
     "gpt-j": "transformer.h",

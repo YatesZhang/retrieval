@@ -27,7 +27,8 @@ cache_dir = path_finder(CACHE_DIRS)
 # lang_encoder_path = "anas-awadalla/mpt-1b-redpajama-200b"
 # .89:
 # cache_dir = "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
-lang_encoder_path = osp.join(cache_dir, "models--anas-awadalla--mpt-1b-redpajama-200b")
+lang_encoder_path = "facebook/opt-125m"
+# lang_encoder_path = "bert-base-uncased"
 tokenizer_path = lang_encoder_path
 model, image_processor, tokenizer = create_model_and_transforms(
     clip_vision_encoder_path="ViT-L-14",
@@ -36,7 +37,7 @@ model, image_processor, tokenizer = create_model_and_transforms(
     tokenizer_path=tokenizer_path,
     cross_attn_every_n_layers=1,
     cache_dir= cache_dir,  # Defaults to ~/.cache
-    lora_tuning=True
+    lora_tuning=False
 )
 
 """

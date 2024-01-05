@@ -22,7 +22,7 @@ from .snli_ve_datasets import SNLIVEDataset  # noqa: F401
 from .text_ocr_dataset import TextOCRDataset  # noqa: F401
 from .vqa_dataset import MyConcatDataset, VQADataset  # noqa: F401
 from .baize_dataset import BaiZeDataset  # noqa: F401
-
+from .gtsrb import GTSRB
 
 def build_dataset(dataset_config, vis_processor, tokenizer):
     """ 
@@ -38,6 +38,11 @@ def build_dataset(dataset_config, vis_processor, tokenizer):
             vis_processor=vis_processor,
             tokenizer=tokenizer,
             **dataset_config
+        )
+    elif dataset_type == 'gtsrb':
+        datasets = GTSRB(
+            tokenizer=tokenizer, 
+            **dataset_config             
         )
     elif dataset_type == "vqa":
         dataset = VQADataset(
