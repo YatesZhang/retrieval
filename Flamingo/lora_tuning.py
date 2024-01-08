@@ -14,7 +14,23 @@ from open_flamingo.src.flamingo_lm import FlamingoLMMixin
 from open_flamingo.src.utils import extend_instance
 from bigmodelvis import Visualization
 from huggingface_hub import hf_hub_download
+from Flamingo.models.decoupled_flamingo import DecoupledFlamingo
 import pdb 
+
+def get_tokenizer(
+    tokenizer_path,
+    cache_dir="/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo",
+    use_local_files=False,
+):
+    """
+        get tokenizer
+    """
+    text_tokenizer = AutoTokenizer.from_pretrained(
+    tokenizer_path,
+    local_files_only=use_local_files,
+    trust_remote_code=True,
+    cache_dir=cache_dir)
+    return text_tokenizer
 
 
 def create_model_and_transforms(
@@ -29,6 +45,7 @@ def create_model_and_transforms(
     cache_dir=None,
     lora_tuning=False,
     add_eos_token=True,
+    decoupled=False, 
     **flamingo_kwargs):
     """
     Initialize a Flamingo model from a pretrained vision encoder and language encoder.
@@ -69,9 +86,13 @@ def create_model_and_transforms(
         Tokenizer: A tokenizer for the language model
     """
     from rich import print 
-    global_rank = torch.distributed.get_rank()
+    global_rank = -1
+    try: 
+        global_rank = torch.distributed.get_rank()
+    except RuntimeError:
+        print("[yellow]Flamingo will use single GPU or CPU[/yellow]")
     # print("gloabl_rank:", global_rank)
-    print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create vision_encoder and image_processor from open_clip".format(global_rank))
+    print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create vision_encoder and image_processor from open_clip".format(global_rank))
     vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
         clip_vision_encoder_path,    # "ViT-L-14"
         pretrained=clip_vision_encoder_pretrained,    # "openai"
@@ -79,7 +100,7 @@ def create_model_and_transforms(
     )
     # set the vision encoder to output the visual features
     vision_encoder.visual.output_tokens = True
-    print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create text_tokenizer".format(global_rank))
+    print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create text_tokenizer".format(global_rank))
     text_tokenizer = AutoTokenizer.from_pretrained(
         tokenizer_path,
         local_files_only=use_local_files,
@@ -95,20 +116,21 @@ def create_model_and_transforms(
         # modify labels for the loss.
         text_tokenizer.add_special_tokens({"pad_token": "<PAD>"})
 
-    print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create LLM from ".format(global_rank), lang_encoder_path)
+    print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create LLM from ".format(global_rank), lang_encoder_path)
     lang_encoder = AutoModelForCausalLM.from_pretrained(
         lang_encoder_path,
         local_files_only=use_local_files,
         trust_remote_code=True,
         cache_dir=cache_dir,
     )
-
+    
+    # import pdb 
+    # pdb.set_trace()
     # hacks for MPT-1B, which doesn't have a get_input_embeddings method
     if "mpt-1b-redpajama-200b" in lang_encoder_path:
         class EmbeddingFnMixin:
             def get_input_embeddings(self):
                 return self.transformer.wte
-
             def set_input_embeddings(self, new_embeddings):
                 self.transformer.wte = new_embeddings
 
@@ -122,28 +144,39 @@ def create_model_and_transforms(
     lang_encoder.set_decoder_layers_attr_name(decoder_layers_attr_name)
     lang_encoder.resize_token_embeddings(len(text_tokenizer))
 
-    print("[[bold magenta]@rank{}[/bold magenta]|create Flamingo] create Flamingo with cross_attn_every_n_layers=".format(global_rank),
+    print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create Flamingo with cross_attn_every_n_layers=".format(global_rank),
            cross_attn_every_n_layers)
-    model = Flamingo(
-        vision_encoder,
-        lang_encoder,
-        text_tokenizer.encode("<|endofchunk|>")[-1],
-        text_tokenizer.encode("<image>")[-1],
-        vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"][
-            "width"
-        ],
-        cross_attn_every_n_layers=cross_attn_every_n_layers,
-        **flamingo_kwargs)
-
+    if not decoupled:
+        model = Flamingo(
+            vision_encoder,
+            lang_encoder,
+            text_tokenizer.encode("<|endofchunk|>")[-1],
+            text_tokenizer.encode("<image>")[-1],
+            vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"][
+                "width"
+            ],
+            cross_attn_every_n_layers=cross_attn_every_n_layers,
+            **flamingo_kwargs)
+    else:
+        model = DecoupledFlamingo(
+            lang_encoder,
+            text_tokenizer.encode("<|endofchunk|>")[-1],
+            text_tokenizer.encode("<image>")[-1],
+            vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"][
+                "width"
+            ],
+            cross_attn_every_n_layers=cross_attn_every_n_layers,
+            **flamingo_kwargs
+        )
     # load checkpoint:
-    print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] load checkpoint.pt from huggingface ".format(global_rank=global_rank))
+    print("[[bold yellow]@rank{global_rank}[/bold yellow]|create Flamingo] load checkpoint.pt from huggingface ".format(global_rank=global_rank))
     checkpoint_path = hf_hub_download("openflamingo/OpenFlamingo-3B-vitl-mpt1b",
      "checkpoint.pt",
       cache_dir=cache_dir)
     # checkpoint_path = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo/checkpoint.pt"
     model.load_state_dict(torch.load(checkpoint_path), strict=False)
     
-    print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] Freeze all parameters ".format(global_rank=global_rank))
+    print("[[bold yellow]@rank{global_rank}[/bold yellow]|create Flamingo] Freeze all parameters ".format(global_rank=global_rank))
     # Freeze all parameters
     model.requires_grad_(False)
     assert sum(p.numel() for p in model.parameters() if p.requires_grad) == 0
@@ -152,14 +185,7 @@ def create_model_and_transforms(
     from peft import LoraConfig, get_peft_model
     
 
-    lora_target_modules=["Wqkv",
-    #  "out_proj", 
-                            "to_q", "to_kv", "to_out",
-                            "ff.1", "ff.3"]
-    # Lora for LLaMa:
-    # lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj", 
-    #                         "to_q", "to_kv", "to_out",
-    #                         "ff.1", "ff.3"],
+    lora_target_modules=["Wqkv", "to_q", "to_kv", "to_out", "ff.1", "ff.3"]
     tuning_config = dict(
         r=16,
         lora_alpha=16,
@@ -172,15 +198,18 @@ def create_model_and_transforms(
     tuning_config = LoraConfig(
         **tuning_config
     )
-    # pdb.set_trace()
-    print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] LoRa tuning mode: ".format(global_rank=global_rank),
+    print("[[bold yellow]@rank{global_rank}[/bold yellow]|create Flamingo] LoRa tuning mode: ".format(global_rank=global_rank),
      lora_tuning)
     if lora_tuning:
-        print("[[bold magenta]@rank{global_rank}[/bold magenta]|create Flamingo] LoRa tuning adaptor injection: ".format(global_rank=global_rank),
+        print("[[bold yellow]@rank{global_rank}[/bold yellow]|LoRA tuning config] LoRa tuning adaptor injection: ".format(global_rank=global_rank),
          lora_target_modules)
         model = get_peft_model(model, peft_config=tuning_config)
         model.print_trainable_parameters()
-    # vis model: 
+    else:
+        print("[[bold yellow]@rank{global_rank}[/bold yellow]|set requires_grad] No LoRA adaptor, unfrozen the gate cross attention layer".format(global_rank=global_rank))
+        print("[[bold yellow]@rank{global_rank}[/bold yellow]|set requires_grad] unfrozen perceiver layer".format(global_rank=global_rank))
+        model.perceiver.requires_grad_(True)
+        model.lang_encoder.gated_cross_attn_layers.requires_grad_(True)
     if global_rank == 0:
         Visualization(lang_encoder).structure_graph()
     
@@ -194,9 +223,11 @@ def create_model_and_transforms(
     if not freeze_lm_embeddings:
         model.lang_encoder.get_input_embeddings().requires_grad_(True)
         # TODO: investigate also training the output embeddings when untied
-
+    num_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    num_trainable_params = num_trainable_params / (1024 * 1024)
+    num_trainable_params = int(num_trainable_params)
     print(
-        "Flamingo model initialized with {} trainable parameters".format(sum(p.numel() for p in model.parameters() if p.requires_grad))
+        "Flamingo model initialized with [green]{}MB[/green] trainable parameters".format(num_trainable_params)
     )
 
     return model, image_processor, text_tokenizer
@@ -216,6 +247,7 @@ def _infer_decoder_layers_attr_name(model):
 
 
 __KNOWN_DECODER_LAYERS_ATTR_NAMES = {
+    # "bertlmheadmodel":"bert.encoder.layer",
     "opt": "model.decoder.layers",
     "gptj": "transformer.h",
     "gpt-j": "transformer.h",

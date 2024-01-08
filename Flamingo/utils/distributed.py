@@ -2,7 +2,9 @@
 import os
 
 import torch
-
+"""
+    conda install -c conda-forge horovod 
+"""
 try:
     import horovod.torch as hvd
 except ImportError:

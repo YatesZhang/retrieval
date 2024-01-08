@@ -10,7 +10,7 @@ from Flamingo.config.baseline import dataset_config, model_config, workflows
 from Flamingo.utils import parse_args 
 # model:
 from Flamingo.lora_tuning import create_model_and_transforms 
-from Flamingo.models.batchprocessor import FlamingoBatchProcessor
+from Flamingo.models.batchprocessor import FlamingoBatchProcessor, DecoupledFlamingoBatchProcessor
 # runner
 from Flamingo.runner.deepspeed_runner import Runner as DeepSpeedRunner 
 # DataLoader, DataSampler
@@ -43,8 +43,9 @@ def main():
 
     # build batch processor for model (Forward pass, return loss): 
     precision = args.precision 
-    batch_processor = FlamingoBatchProcessor(PRECISIONS[precision])
-
+    # batch_processor = FlamingoBatchProcessor(cast_type=PRECISIONS[precision])
+    batch_processor = DecoupledFlamingoBatchProcessor(cast_type=PRECISIONS[precision])
+    
     # build dataloader:
     dataset = build_dataset(
         dataset_config=dataset_config,

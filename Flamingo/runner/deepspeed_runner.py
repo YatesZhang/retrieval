@@ -1,10 +1,10 @@
 import time
 import cv2
 import torch
-from torch.nn import DataParallel
-from torch.optim import Optimizer
-from torch.utils.data import DataLoader
-from accelerate import Accelerator
+# from torch.nn import DataParallel
+# from torch.optim import Optimizer
+# from torch.utils.data import DataLoader
+# from accelerate import Accelerator
 from tqdm import tqdm
 import numpy as np
 import random
@@ -26,6 +26,7 @@ from Flamingo.utils.utils import get_lora_weight_only
     see: https://github.com/microsoft/DeepSpeed/issues/4287
     4) resume from checkpoint
 """
+
 class Runner(object):
     def __init__(self,
                 model,
@@ -294,7 +295,7 @@ class Runner(object):
             self.after_train_iter() 
         self.after_train_epoch()
         return 
-
+    
     def test(self):
         """ 
             test phase 
@@ -307,7 +308,6 @@ class Runner(object):
                 output = self.batch_processor(model=self.model, batch=batch, mode='test') 
                 self.after_test_step()
         raise NotImplementedError
-
         
 
 

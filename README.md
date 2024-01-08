@@ -83,6 +83,11 @@ deepspeed --include=localhost:2,3,4,5 train_flamingo.py \
     --work_dir ../work_dir \
     # --enable_tensorboard
 ```
+### 5.2 optimizer
+- [nvdiia-apex](https://github.com/NVIDIA/apex): kernel fusion技术 避免a + b + c产生过多中间变量 see this [video](https://www.bilibili.com/video/BV1fG411G7eH/?spm_id_from=333.337.search-card.all.click&vd_source=4e49c8a2b1f29e1bff28c40551c66ebc) on bilibili
+```
+
+```
 ## 6. Evaluation 
 ### 6.1 COCO-captions
 详细介绍了COCO Caption工作
@@ -99,7 +104,7 @@ deepspeed --include=localhost:2,3,4,5 train_flamingo.py \
 - [trion integrated in DeepSpeed](https://github.com/microsoft/DeepSpeed/blob/master/blogs/deepspeed-triton/README.md)
 - TensorRT
 - Megatron-LM
-
+- [DeepSpeed inference](https://github.com/microsoft/DeepSpeed/blob/master/docs/_tutorials/inference-tutorial.md)
 ## 8. LoRA Tuning
 
 see model structure of LLaMa

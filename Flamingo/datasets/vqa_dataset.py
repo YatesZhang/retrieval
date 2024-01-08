@@ -173,7 +173,7 @@ class VQADataset(Dataset):
         if res["input_ids"][-1] != self.tokenizer.eos_token_id and len(res["input_ids"]) < 512 and self.add_eos:
             res["input_ids"].append(self.tokenizer.eos_token_id)
             res["attention_mask"].append(1)
-        labels = copy.deepcopy(res["input_ids"])
+        labels = copy.deepcopy(res["input_ids"])    # input ids = instruction + answer
         labels = [label for label in labels if label is not None]
         # ignore instruction_token
         if self.ignore_instruction:
