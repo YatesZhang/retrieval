@@ -18,7 +18,9 @@ CACHE_DIRS = [
     # .13:
     "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo",
     # .89:
-    "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
+    "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo",
+    # .7
+    "/cfsdata2/cfsdata/workspace/yunzhi/checkpoint/flamingo"
 ]
 cache_dir = path_finder(CACHE_DIRS)
 # for dir_path in CACHE_DIRS:
