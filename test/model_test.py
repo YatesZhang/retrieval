@@ -37,5 +37,5 @@ if __name__ == "__main__":
     model, image_processor, tokenizer = create_model_and_transforms(
         **model_config
     )
-    model = deepspeed.initialize(model=model)
+    # model = deepspeed.initialize(model=model)
     pdb.set_trace()

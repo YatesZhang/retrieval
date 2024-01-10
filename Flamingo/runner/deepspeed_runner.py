@@ -17,7 +17,7 @@ from loguru import logger
 import os.path as osp
 import datetime
 from Flamingo.utils.distributed import rank_zero_only
-from Flamingo.utils.utils import get_lora_weight_only
+from Flamingo.utils.utils import get_lora_weight_only, get_flamingo_adaptor_weight
 
 """ 
     1) training step on logger 
@@ -191,13 +191,14 @@ class Runner(object):
         """ 
             only save loRA weight in rank 0
         """
-        loRA_dict = get_lora_weight_only(self.model)
+        state_dict = get_flamingo_adaptor_weight(self.model)
+        # state_dict = get_lora_weight_only(self.model)
         save_dir = osp.join(self.work_dir, str(self.train_epoch))
         if not osp.exists(save_dir):
             os.mkdir(save_dir)
-        weight_path = osp.join(save_dir, 'loRA.pth')
-        torch.save(loRA_dict, weight_path)
-        self.info_rank_zero("[rank@{rank}|{world_size}]LoRA weight saved at: {weight_path}".format(
+        weight_path = osp.join(save_dir, 'weight.pth')
+        torch.save(state_dict, weight_path)
+        self.info_rank_zero("[rank@{rank}|{world_size}]state_dict weight saved at: {weight_path}".format(
                    weight_path=weight_path,
                    rank=self.rank,
                    world_size=self.world_size))

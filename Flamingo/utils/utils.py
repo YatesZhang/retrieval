@@ -84,8 +84,20 @@ def get_perceiver_weight(flamingo_model):
         model.lang_encoder.gated_cross_attn_layers.state_dict()
         model.perceiver.state_dict()
     """
-    to_return = {} 
-    for name, param in flamingo_model.named_parameters():
-        if "perceiver" in name:
-            to_return[name] = maybe_zero_3(param) 
+    to_return = flamingo_model.perceiver.state_dict()
     return to_return 
+
+def get_gated_cross_attn_layers(flamingo_model):
+    """ 
+        model.lang_encoder.gated_cross_attn_layers.state_dict()
+    """
+    to_return = flamingo_model.lang_encoder.gated_cross_attn_layers.state_dict()
+    return to_return 
+
+def get_flamingo_adaptor_weight(flamingo_model):
+    """ 
+        save flamingo adaptor weight to file
+    """
+    state_dict = get_perceiver_weight(flamingo_model)
+    state_dict.update(get_gated_cross_attn_layers(flamingo_model))
+    return state_dict 
