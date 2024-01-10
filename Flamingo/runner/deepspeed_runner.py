@@ -189,10 +189,16 @@ class Runner(object):
     @rank_zero_only
     def save_checkpoint(self):
         """ 
-            only save loRA weight in rank 0
+            only save weight in rank 0
         """
-        state_dict = get_flamingo_adaptor_weight(self.model)
-        # state_dict = get_lora_weight_only(self.model)
+        if hasattr(self.model, 'peft_config'):
+            """ 
+                saves peft weight only (LoRA)
+            """
+            state_dict = get_lora_weight_only(self.model)
+        else:
+            state_dict = get_flamingo_adaptor_weight(self.model)
+        
         save_dir = osp.join(self.work_dir, str(self.train_epoch))
         if not osp.exists(save_dir):
             os.mkdir(save_dir)
@@ -309,12 +315,13 @@ class Runner(object):
             how to do test in DeepSpeed ? 
         """
         self.before_test_epoch()
-        with torch.no_grad():
-            for step, batch in enumerate(self.test_loader):
-                self.step = step 
-                output = self.batch_processor(model=self.model, batch=batch, mode='test') 
-                self.after_test_step()
-        raise NotImplementedError
+        pass 
+        # with torch.no_grad():
+        #     for step, batch in enumerate(self.test_loader):
+        #         self.step = step 
+        #         output = self.batch_processor(model=self.model, batch=batch, mode='test') 
+        #         self.after_test_step()
+        # raise NotImplementedError
         
 
 
