@@ -8,7 +8,7 @@ CACHE_DIRS = [
     # .13:
     "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo",
     # .89:
-    "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo"
+    "/root/ln_homework/code/third_party/VLLM/retrieval/Flamingo/cache_dir/flamingo",
 ]
 
 VIS_ROOTS = [
@@ -20,7 +20,12 @@ ANNO_PATHS = [
     "/home/datasets/COCO/annotations/aokvqa_v1p0_train.json",
     "/home/yunzhi/datasets/aokvqa_v1p0/aokvqa_v1p0_train.json"
 ]
-cache_dir = path_finder(CACHE_DIRS)
+
+TRAIN_PATHS = [
+    "/root/datasets/GTSRB/Train",
+]
+# cache_dir = path_finder(CACHE_DIRS)
+cache_dir = None 
 # lang_encoder_path = osp.join(cache_dir, "models--anas-awadalla--mpt-1b-redpajama-200b/snapshots/50d6bc94e17812873f39c36c5f815263fa71fb80")
 lang_encoder_path = "facebook/opt-125m"
 tokenizer_path = lang_encoder_path
@@ -45,8 +50,7 @@ model_config = dict(
     decoupled=True  
 )
 #
-vis_root = path_finder(VIS_ROOTS)
-anno_path = path_finder(ANNO_PATHS)
+
 
 # dataset_config = dict(
 #     type="aokvqa",
@@ -57,7 +61,7 @@ anno_path = path_finder(ANNO_PATHS)
 dataset_config = dict(
     type='gtsrb',
     data_dir='/home/yunzhi/yunzhi/datasets',
-    train_path='/home/yunzhi/yunzhi/datasets/Train',
+    train_path=path_finder(TRAIN_PATHS),    # only required by GTSRB
     test_path='/home/yunzhi/yunzhi/datasets',
     mode='train'
 )

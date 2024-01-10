@@ -5,6 +5,11 @@ import math
 import torch 
 import deepspeed
 # model config and dataset config: 
+try:
+    import Flamingo
+except ModuleNotFoundError:
+    import sys
+    sys.path.append("..")
 from Flamingo.config.baseline import dataset_config, model_config, workflows
 # argparser:
 from Flamingo.utils import parse_args 

@@ -7,16 +7,16 @@ from PIL import Image
 from glob import glob
 import numpy as np 
 
-data_dir = '/home/yunzhi/yunzhi/datasets'
-train_path = '/home/yunzhi/yunzhi/datasets/Train'
-test_path = '/home/yunzhi/yunzhi/datasets'
+# data_dir = '/home/yunzhi/yunzhi/datasets'
+# train_path = '/home/yunzhi/yunzhi/datasets/Train'
+# test_path = '/home/yunzhi/yunzhi/datasets'
 
 
 # Resizing the images to 30x30x3
 IMG_HEIGHT = 224
 IMG_WIDTH = 224
 channels = 3
-NUM_CATEGORIES = len(os.listdir(train_path))
+# NUM_CATEGORIES = len(os.listdir(train_path))
 
 # Label Overview
 classes = { 0:'Speed limit (20km/h)',

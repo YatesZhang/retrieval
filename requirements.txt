@@ -9,3 +9,4 @@ scikit-image
 deepspeed
 rich
 bigmodelvis
+loguru

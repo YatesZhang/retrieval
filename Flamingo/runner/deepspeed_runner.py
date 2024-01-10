@@ -72,7 +72,13 @@ class Runner(object):
             lr_scheduler=lr_scheduler,
             config=args.ds_config 
         )
-
+        """ 
+            model: 
+            DeepSpeedEngine(
+                (module):MyModel
+            )
+            model.submodule == model.module.submodule
+        """
         self.model = model 
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler

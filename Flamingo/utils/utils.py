@@ -78,3 +78,14 @@ def get_lora_weight_only(peft_model):
     bias = peft_model.peft_config['default'].bias
     state_dict = get_peft_state_maybe_zero_3(peft_model.named_parameters(), bias=bias)
     return state_dict 
+
+def get_perceiver_weight(flamingo_model):
+    """ 
+        model.lang_encoder.gated_cross_attn_layers.state_dict()
+        model.perceiver.state_dict()
+    """
+    to_return = {} 
+    for name, param in flamingo_model.named_parameters():
+        if "perceiver" in name:
+            to_return[name] = maybe_zero_3(param) 
+    return to_return 
