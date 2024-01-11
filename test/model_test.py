@@ -23,7 +23,11 @@ model_config = dict(
 )
 import sys 
 sys.path.append("..")
+import torch
 from Flamingo.lora_tuning import create_model_and_transforms 
+from Flamingo.models.batchprocessor import DecoupledFlamingoBatchProcessor
+from Flamingo.config.baseline import dataset_config
+from Flamingo.datasets import build_dataset
 import pdb
 import deepspeed
 if __name__ == "__main__":
@@ -31,11 +35,28 @@ if __name__ == "__main__":
     Debug model with deepspeed. 
     Example: 
         deepspeed --num_gpus=1 --local_rank=0 model_test.py 
-    
+        CUDA_VISIBLE_DEVICES=2 python model_test.py 
     """
     # build model, image processor and tokenizer
     model, image_processor, tokenizer = create_model_and_transforms(
         **model_config
     )
-    # model = deepspeed.initialize(model=model)
-    pdb.set_trace()
+    print("Load state dict:")
+    state_dict = torch.load("/root/yunzhi/flamingo_retrieval/retrieval/work_dir/100/weight.pth")
+    # pdb.set_trace()
+    keys1 = model.lang_encoder.gated_cross_attn_layers.load_state_dict(state_dict, strict=False)
+    keys2 = model.perceiver.load_state_dict(state_dict, strict=False)
+    dataset = build_dataset(
+        dataset_config=dataset_config,
+        vis_processor=image_processor,
+        tokenizer=tokenizer)
+    model.eval()
+    batch_processor = DecoupledFlamingoBatchProcessor(cast_type='bf16', tokenizer=tokenizer)
+    with torch.no_grad():
+        for data in dataset:
+            img = data['img']
+            path = data['path']
+            label = data['label']
+            output = batch_processor(model=model, batch=img, mode='test',
+            text_prompt="<image>Output:", num_beams=3, max_new_tokens=20)
+            pdb.set_trace()

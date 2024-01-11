@@ -134,6 +134,7 @@ class Runner(object):
         self.logger.info(str(self.lr_scheduler))
         self.logger.info(str(self.workflows))
         # self.logger.info()
+        # self.save_checkpoint()
         return 
     
     @rank_zero_only

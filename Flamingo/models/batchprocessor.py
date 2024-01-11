@@ -7,7 +7,11 @@ from rich import print
 import numpy as np 
 from PIL import Image
 import pdb 
-
+PRECISIONS = {
+    "fp32": torch.float,
+    "fp16": torch.float16,
+    "bf16": torch.bfloat16,
+}
 def img_auto_cast(imgs):
     """ 
         clip vision_encoder's image processor accept Pillow image only
@@ -62,7 +66,7 @@ class FlamingoBatchProcessor(object):
         device = next(model.parameters()).device
         return device  
     
-    def process_batch(self, model, batch, few_shot_prompt=None):
+    def process_batch(self, model, batch, few_shot_prompt=None, **kwargs):
         """ 
             training phase
         """
@@ -85,7 +89,7 @@ class FlamingoBatchProcessor(object):
         return loss
      
     # @torch.no_grad
-    def inference(self, model, batch):
+    def inference(self, model, batch, **kwargs):
         """ 
             batch_size x num_media x num_frames x channels x height x width. 
             B, N, F, C, H, W
@@ -115,23 +119,30 @@ class FlamingoBatchProcessor(object):
         return result_text
 
 
-    def __call__(self, model, batch, mode='train'):
+    def __call__(self, model, batch, mode='train', **kwargs):
         """ 
             call the batch processor in training  
         """
         assert mode in ['train', 'test', 'inference']
         if mode == 'train':
-            return self.process_batch(model, batch)
+            return self.process_batch(model, batch, **kwargs)
         elif mode == 'test':
-            return self.inference(model, batch)
+            return self.inference(model, batch, **kwargs)
         else:   # inference:
             raise NotImplementedError
-        
+
+
 class DecoupledFlamingoBatchProcessor(FlamingoBatchProcessor):
     def __init__(self, tokenizer=None, cast_type=torch.bfloat16, num_beams=3, max_new_tokens=20):
+        """ 
+        
+        """
+        if isinstance(cast_type, str):
+            assert cast_type in PRECISIONS
+            cast_type = PRECISIONS[cast_type]
         super().__init__(tokenizer=tokenizer, cast_type=cast_type, num_beams=num_beams, max_new_tokens=max_new_tokens)
 
-    def process_batch(self, model, batch, few_shot_prompt=None):
+    def process_batch(self, model, batch, few_shot_prompt=None, **kwargs):
         """ 
             training phase
         """
@@ -156,6 +167,34 @@ class DecoupledFlamingoBatchProcessor(FlamingoBatchProcessor):
         loss = loss.sum() 
         # loss /= self.gradient_accumulation_steps 
         return loss
+    
+    @torch.inference_mode()
+    def inference(self, model, batch, text_prompt="", num_beams=-1, max_new_tokens=-1, **kwargs):
+        device = self.get_device(model=model)
+        if isinstance(batch, dict):
+            img = batch["img"] 
+        else:
+            img = batch
+        assert isinstance(img, torch.Tensor) and len(img.shape) == 5, "img should be a 5-dim tensor as [B, T, F. V, D]"
+        img = img.to(device, dtype=self.cast_type, non_blocking=True)
+        if text_prompt == "":
+            text_prompt = "<image>Output:"
+        elif not text_prompt.startswith("<image>"):
+            text_prompt = "<image>{}".format(text_prompt)
+
+        batch_encoding = self.tokenizer(text_prompt, return_tensors="pt", padding=True)
+        input_ids = batch_encoding["input_ids"].to(device, dtype=torch.long, non_blocking=True)
+        attention_mask = batch_encoding["attention_mask"].to(device, dtype=torch.long,  non_blocking=True)
+        generated_text = model.generate(
+            vision_x=img,
+            lang_x=input_ids,
+            attention_mask=attention_mask,
+            max_new_tokens=max_new_tokens if max_new_tokens > 0 else self.max_new_tokens,
+            num_beams=num_beams if num_beams > 0 else self.num_beams,
+            pad_token_id=self.tokenizer.eos_token_id
+        )
+        generated_text = generated_text.cpu()
+        return self.tokenizer.batch_decode(generated_text, skip_special_tokens=True)
        
 class CLIPBatchProcessor(object):
     def __init__(self, vision_encoder, image_processor):
