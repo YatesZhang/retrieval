@@ -16,18 +16,19 @@ def build_dataset(dataset_config, vis_processor, tokenizer):
     if isinstance(dataset_config, list):
         datasets = [build_dataset(cfg, vis_processor=vis_processor, tokenizer=tokenizer) for cfg in dataset_config]
         return MyConcatDataset(datasets)
-    dataset_type = dataset_config.pop("type")
-    sample = dataset_config.pop("sample", -1)
+    _dataset_config = dataset_config.copy()
+    dataset_type = _dataset_config.pop("type")
+    sample = _dataset_config.pop("sample", -1)
     if dataset_type == 'gtsrb':
         dataset = GTSRB(
             tokenizer=tokenizer, 
-            **dataset_config             
+            **_dataset_config             
         )
     elif dataset_type == "vqa":
         dataset = VQADataset(
             vis_processor=vis_processor,
             tokenizer=tokenizer,
-            **dataset_config
+            **_dataset_config
         )
     else:
         raise NotImplementedError

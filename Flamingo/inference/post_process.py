@@ -1,22 +1,33 @@
-def _convert_2_vocabs(text, tokenizer, vocabs):
-    """ 
-        skip tokens out of vocabs
-    """
-    assert isinstance(text, str)
-    _input_ids = tokenizer(text)['input_ids']
-    input_ids = []·
-    for token_id in _input_ids:
-        if token_id in vocabs:
-            input_ids.append(token_id)
-    return input_ids
-
-def convert_in_vocabs(texts, tokenizer, vocabs):
-    """ 
-    """
+import re 
+def remove_special_characters(text):
+    # 匹配 ASCII 特殊字符的正则表达式
+    pattern = r'[^\x00-\x7f]+'
+    
+    # 使用空字符串替换匹配到的特殊字符
+    result = re.sub(pattern, ' ', text)
+    
+    return result
+def post_process(texts, cats=None):
     result = []
-    if isinstance(texts, list):
-        for text in texts:
-            result.append(_convert_2_vocabs(text, tokenizer, vocabs))
-    elif isinstance(texts, str):
-        result.append(_convert_2_vocabs(texts, tokenizer, vocabs))
-    return tokenizer.batch_decode(result)
+    for text in texts:
+        skip_flag = False
+        text = text.replace("\n", " ")
+        text = remove_special_characters(text)
+        if 'No passing veh over 3.5 tons' in text:
+            result.append('No passing veh over 3.5 tons')    # No passing 
+            continue
+        if cats is not None:
+            for cat in cats:
+                if cat in text:
+                    result.append(cat)  
+                    skip_flag = True
+                    # print("skip: ", cat)
+                    break 
+        if skip_flag:
+            continue 
+        # text = text.replace("\n", "")
+        text = re.sub(r'guiActive.*', '', text) 
+        text = re.sub(r'\\.*', '', text) 
+        result.append(text)
+         
+    return result
