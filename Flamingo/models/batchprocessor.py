@@ -89,7 +89,7 @@ class FlamingoBatchProcessor(object):
         return loss
      
     # @torch.no_grad
-    def inference(self, model, batch, **kwargs):
+    def inference(self, model, batch, vocabs=None, **kwargs):
         """ 
             batch_size x num_media x num_frames x channels x height x width. 
             B, N, F, C, H, W
@@ -115,6 +115,8 @@ class FlamingoBatchProcessor(object):
             pad_token_id=self.tokenizer.eos_token_id
         )
         generated_text = generated_text.cpu()
+        print(type(generated_text))
+
         result_text = [self.tokenizer.decode(text, skip_special_tokens=True) for text in generated_text]
         return result_text
 
@@ -181,10 +183,10 @@ class DecoupledFlamingoBatchProcessor(FlamingoBatchProcessor):
             text_prompt = "<image>Output:"
         elif not text_prompt.startswith("<image>"):
             text_prompt = "<image>{}".format(text_prompt)
-
+        batch_size = img.shape[0]
         batch_encoding = self.tokenizer(text_prompt, return_tensors="pt", padding=True)
-        input_ids = batch_encoding["input_ids"].to(device, dtype=torch.long, non_blocking=True)
-        attention_mask = batch_encoding["attention_mask"].to(device, dtype=torch.long,  non_blocking=True)
+        input_ids = batch_encoding["input_ids"].to(device, dtype=torch.long, non_blocking=True).repeat(batch_size, 1)
+        attention_mask = batch_encoding["attention_mask"].to(device, dtype=torch.long, non_blocking=True).repeat(batch_size, 1)
         generated_text = model.generate(
             vision_x=img,
             lang_x=input_ids,

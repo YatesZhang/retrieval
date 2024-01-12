@@ -6,7 +6,8 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image 
 from glob import glob
 import numpy as np 
-
+from matplotlib import pyplot as plt 
+from random import randint
 # data_dir = '/home/yunzhi/yunzhi/datasets'
 # train_path = '/home/yunzhi/yunzhi/datasets/Train'
 # test_path = '/home/yunzhi/yunzhi/datasets'
@@ -101,10 +102,17 @@ class GTSRB(Dataset):
     def show(self, index):
         data_info = self.data_infos[index].copy()
         path = data_info['path']
-        label = data_info['label']
-        print(label)
+        if path.endswith(".pth"):
+            path = path[:-4]
         return Image.open(path)
-
+    def get_vocabs(self):
+        vocabs = " "
+        for k in classes:
+            vocabs += classes[k]
+            vocabs += " "
+        vocabs = tokenizer(vocabs)['input_ids']
+        vocabs = set(vocabs)
+        return vocabs
     def collater(self, samples):
         """
             sample: 
@@ -213,6 +221,39 @@ class GTSRB(Dataset):
             path=path,
         )
     
+    def random_input25(self):
+        """ 
+            show batch input 
+        """
+        # random choice 25 samples
+        rand_idx = np.random.choice(len(self.data_infos), 25)
+        vision_x = []
+        imgs = []
+        labels = []
+        for idx in rand_idx:
+            """ 
+                data_info:{
+                    img, path, label
+                }
+            """
+            data_info = self[idx].copy()
+            vision_x.append(data_info['img'])
+            # label
+            label = data_info['label']
+            labels.append(label)
+            # image
+            path = data_info['path']
+            if path.endswith('.pth'):
+                path = path[:-4]
+            img = np.array(Image.open(path)).astype('uint8')
+            imgs.append(img) 
+        vision_x = torch.cat(vision_x, dim=0)
+        return dict(
+            vision_x=vision_x,
+            labels=labels,
+            imgs=imgs,
+        )
+
     def __len__(self):
         return len(self.data_infos)
     

@@ -10,3 +10,4 @@ deepspeed
 rich
 bigmodelvis
 loguru
+sentence-transformers
