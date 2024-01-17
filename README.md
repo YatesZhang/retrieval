@@ -99,6 +99,10 @@ deepspeed --include=localhost:2,3,4,5 train_flamingo.py \
 - [code on github](https://github.com/GT-Vision-Lab/VQA)
 ### 6.3 A-OK VQA
 - see [code](https://github.com/allenai/aokvqa/tree/main/evaluation)
+
+### 6.4 Relationship Prediction 
+- [VisualGenome](https://homes.cs.washington.edu/~ranjay/visualgenome/index.html) (relationship, caption, VQA, Attributes)
+- [OpenImages](https://storage.googleapis.com/openimages/web/download_v7.html#df-visual-relationships) 
 ## 7. Inference
 - [trion compiler](https://github.com/openai/triton)
 - [trion integrated in DeepSpeed](https://github.com/microsoft/DeepSpeed/blob/master/blogs/deepspeed-triton/README.md)
