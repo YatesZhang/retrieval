@@ -1,0 +1,1 @@
+from .Detection import Detection2CLSLabel

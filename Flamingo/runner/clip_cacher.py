@@ -90,6 +90,7 @@ class CacheCLIPOutRunner(object):
             clip_model.cuda(rank).eval() for rank in range(self.mp_size)
         ]
 
+    @torch.no_grad()
     def thread_worker(self, rank):
         """ 
             thread worker for muti gpu inference
@@ -100,16 +101,8 @@ class CacheCLIPOutRunner(object):
         for data in tqdm(dataloader):
             assert isinstance(data, Detection2CLSLabel)
             imgs = data["img"]
-            try:
-                out = self.batch_processor(clip_model, imgs)
-            except RuntimeError:
-                """
-                    to deal with CUDA out of memory
-                """
-                if len(imgs) == 1:
-                    raise RuntimeError("CUDA out of memory")
-                
-                pass 
+            out = self.batch_processor(clip_model, imgs)
+
     def init_cache_dir(self):
         """ 
             make cache dir if not exists

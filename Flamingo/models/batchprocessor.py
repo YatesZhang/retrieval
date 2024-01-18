@@ -279,6 +279,37 @@ class CLIPBatchProcessor(object):
         raise TypeError("input type should be PIL, not {}".format(type(imgs).__name__))
     
     @torch.inference_mode()
+    def try_batch(self, imgs):
+        """
+            try batch process the input images
+            input:
+                imgs: [B, C, H, W]
+            output:
+                out: [B, 1, 1, v, d]
+        """
+        if imgs.shape[0] == 1:
+            try:
+                out = self.vision_encoder(imgs)[1]
+            except RuntimeError:
+                if not hasattr(self, 'vision_encoder_cpu'):
+                    self.vision_encoder_cpu = self.vision_encoder.cpu()
+                out = self.vision_encoder_cpu(imgs.cpu())[1]    # shape: [B, V, D]
+                out = out.unsqueeze(1).unsqueeze(1) 
+                return out
+        else:
+            try:
+                mid = imgs.shape[0] // 2
+                out_l = self.vision_encoder(imgs[:mid])[1] # shape: [B//2, V, D]
+                out_r = self.vision_encoder(imgs[mid:])[1] # shape: [B//2, V, D]
+            except RuntimeError:
+                out_l = self.try_batch(imgs[:mid])
+                out_r = self.try_batch(imgs[mid:])
+            out = torch.cat([out_l, out_r], dim=0)
+            while len(out.shape) < 5:
+                out = out.unsqueeze(1)
+        return out
+
+    @torch.inference_mode()
     def __call__(self, imgs):
         """
         support: 
@@ -306,8 +337,8 @@ class CLIPBatchProcessor(object):
         out = None
         try:
             out = self.vision_encoder(imgs)[1]
+            out = out.unsqueeze(1).unsqueeze(1)
         except RuntimeError:
             out = self.try_batch(imgs)
         # out shape: (B, T, F) v, d == [B, 1, 1, v, d]
-        out = out.unsqueeze(1).unsqueeze(1) 
         return out 

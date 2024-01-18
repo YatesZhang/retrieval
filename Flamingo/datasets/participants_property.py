@@ -6,6 +6,7 @@ from PIL import Image
 import cv2
 import os
 from copy import deepcopy
+from Flamingo.structure import Detection2CLSLabel
 
 def draw_bounding_box(image, bbox, label, mode='xyxy'):
     if mode == 'xywh':
@@ -136,7 +137,9 @@ class ParticipantsProperty(Dataset):
             text = "{}: {}".format(category_name, attributes_name)
             img = draw_bounding_box(img, bbox, text, mode='xywh')
         return img
-
+    def collate_fn(self, batch):
+        batch = [Detection2CLSLabel(data_info) for data_info in batch]
+        pass 
     def __getitem__(self, index):
         data_info = self.data_infos[index].copy()
         data_info = self.load_image(data_info)
