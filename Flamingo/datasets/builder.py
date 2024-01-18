@@ -30,6 +30,10 @@ def build_dataset(dataset_config, vis_processor, tokenizer):
             tokenizer=tokenizer,
             **_dataset_config
         )
+    elif dataset_type == "participants_property":
+        dataset = ParticipantsPropertyDataset(
+            **_dataset_config
+        )
     else:
         raise NotImplementedError
 

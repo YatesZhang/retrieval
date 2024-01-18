@@ -2,8 +2,10 @@
 import json
 import pdb 
 from torch.utils.data import Dataset
+from PIL import Image
 import cv2
 import os
+from copy import deepcopy
 
 def draw_bounding_box(image, bbox, label, mode='xyxy'):
     if mode == 'xywh':
@@ -24,6 +26,7 @@ def draw_bounding_box(image, bbox, label, mode='xyxy'):
 #         image = draw_bounding_box(image, bbox)
 #     return image
 
+    
 class ParticipantsProperty(Dataset):
     """ 
     getitem: 
@@ -39,7 +42,7 @@ class ParticipantsProperty(Dataset):
                     area=...
                 )
             ],
-            img=np.ndarray(1080, 1920, 3)
+            img=Image(1080, 1920, 3)
         )
     """
     def __init__(self, annFile, imgs_dir):
@@ -102,15 +105,29 @@ class ParticipantsProperty(Dataset):
     def __len__(self):
         return len(self.data_infos)
     
+    def split(self, mp_size):
+        """ 
+           mp_size: muti-threading size
+        """
+        datasets = []
+        for i in range(mp_size):
+            dataset = deepcopy(self)
+            dataset.data_infos = self.data_infos[i::mp_size]
+            datasets.append(dataset)
+        assert sum([len(dataset) for dataset in datasets]) == len(self.data_infos)
+        return datasets
+
     def load_image(self, data_info):
         file_name = data_info['file_name']
         path = os.path.join(self.imgs_dir, file_name)
-        img = cv2.imread(path)
+        img = Image.open(path)
         data_info['img'] = img
         return data_info
 
     def draw_labels_with_data_info(self, data_info):
         img = data_info['img'].copy()
+        if isinstance(img, Image.Image):
+            img = np.array(img)
         annotations = data_info['annotations']
         for item in annotations:
             bbox = item['bbox']

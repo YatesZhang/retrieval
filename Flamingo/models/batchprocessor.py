@@ -303,7 +303,11 @@ class CLIPBatchProcessor(object):
             vision_encoder(img)[0].shape: torch.Size([1, 768])
             vision_encoder(img)[1].shape: torch.Size([1, 256, 1024])
         """
-        out = self.vision_encoder(imgs)[1]
+        out = None
+        try:
+            out = self.vision_encoder(imgs)[1]
+        except RuntimeError:
+            out = self.try_batch(imgs)
         # out shape: (B, T, F) v, d == [B, 1, 1, v, d]
         out = out.unsqueeze(1).unsqueeze(1) 
         return out 

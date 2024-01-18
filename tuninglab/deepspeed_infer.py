@@ -51,11 +51,12 @@ class Collate(object):
 model_id="google/flan-t5-small"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForSeq2SeqLM.from_pretrained(model_id)
-dataloader = DataLoader(dataset=InstructionsDataset(), batch_size=2, collate_fn=Collate(tokenizer=tokenizer))
+dataloader = DataLoader(dataset=InstructionsDataset(), batch_size=1, collate_fn=Collate(tokenizer=tokenizer))
 # tokenizer.pad()
 ds_engine = deepspeed.init_inference(model,
                                  mp_size=4,
                                  dtype=torch.float16,
+                                 data_loader=dataloader,
                                 #  checkpoint=None if args.pre_load_checkpoint else args.checkpoint_json,
                                  replace_with_kernel_inject=True 
                                  )
@@ -73,5 +74,5 @@ print("[@rank{rank}] seq: {seq}, type: {T}".format(rank=rank, seq=str(seq), T=ty
 instruction = tokenizer.decode(model.generate(**seq)[0], skip_special_tokens=False)
 print("[@rank{rank}] instruction : {instruction}".format(rank=rank, instruction=instruction))
 # print(instruction)
-pdb.set_trace()
+# pdb.set_trace()
 # output = model('Input String')
