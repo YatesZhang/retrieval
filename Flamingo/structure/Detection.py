@@ -8,6 +8,8 @@ def crop(img, bbox):
     """
     assert isinstance(img, Image.Image)
     x, y, w, h = bbox
+    if x <=0 or y <=0 or w<=0 or h<=0:
+        raise ValueError('bbox is not valid')
     x, y, w, h = int(x), int(y), int(w), int(h)
     return img.crop((x, y, x + w, y + h))
 
@@ -57,6 +59,12 @@ class Detection2CLSLabel(object):
             bbox = annotation['bbox']
             area = annotation['area']
 
+            # skip invalid bbox:
+            x, y, w, h = bbox
+            if x <=0 or y <=0 or w<=0 or h<=0:
+                continue
+            if  x + w >= img.width or y + h >= img.height:
+                continue
             self.imgs.append(crop(img, bbox))
             self.category_names.append(category_name)
             self.attributes_names.append(attributes_name)
@@ -94,3 +102,24 @@ class Detection2CLSLabel(object):
             attributes_name=self.attributes_names[idx],
             meta=self.metas[idx],
         )
+
+def merge_detected(batch):
+    """
+
+    """
+    imgs = []
+    category_names = []
+    attributes_names = []
+    metas = []
+    for detection in batch:
+        assert isinstance(detection, Detection2CLSLabel)
+        imgs += detection.imgs    # List extend
+        category_names += detection.category_names
+        attributes_names += detection.attributes_names
+        metas += detection.metas
+    return dict(
+        imgs=imgs,
+        category_names=category_names,
+        attributes_names=attributes_names,
+        metas=metas,
+    )

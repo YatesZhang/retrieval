@@ -7,6 +7,7 @@ from rich import print
 import numpy as np 
 from PIL import Image
 import pdb 
+from copy import deepcopy
 PRECISIONS = {
     "fp32": torch.float,
     "fp16": torch.float16,
@@ -227,6 +228,14 @@ class CLIPBatchProcessor(object):
         # evaluate mode
         self.vision_encoder.eval()
 
+    def to(self, device):
+        """ 
+            change the device of vision_encoder to device
+        """
+        self.vision_encoder = self.vision_encoder.to(device)
+        self.device = device
+        return self
+
     def get_device(self, model):
         """
             get model's device
@@ -291,8 +300,9 @@ class CLIPBatchProcessor(object):
             try:
                 out = self.vision_encoder(imgs)[1]
             except RuntimeError:
+                print("[warning!] try cpu offload")
                 if not hasattr(self, 'vision_encoder_cpu'):
-                    self.vision_encoder_cpu = self.vision_encoder.cpu()
+                    self.vision_encoder_cpu = deepcopy(self.vision_encoder).cpu().eval()
                 out = self.vision_encoder_cpu(imgs.cpu())[1]    # shape: [B, V, D]
                 out = out.unsqueeze(1).unsqueeze(1) 
                 return out
@@ -321,6 +331,7 @@ class CLIPBatchProcessor(object):
             from [B, C, H, W]
             
         """
+
         # get imgs:
         imgs = img_auto_cast(imgs)
         imgs = self.img_auto_collect(imgs)
@@ -339,6 +350,7 @@ class CLIPBatchProcessor(object):
             out = self.vision_encoder(imgs)[1]
             out = out.unsqueeze(1).unsqueeze(1)
         except RuntimeError:
+            print("[warning!] try cpu offload")
             out = self.try_batch(imgs)
         # out shape: (B, T, F) v, d == [B, 1, 1, v, d]
         return out 

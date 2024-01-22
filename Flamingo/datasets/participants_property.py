@@ -1,12 +1,21 @@
 
 import json
 import pdb 
+import torch
 from torch.utils.data import Dataset
 from PIL import Image
 import cv2
 import os
 from copy import deepcopy
+try:
+    import Flamingo
+except ModuleNotFoundError:
+    import sys
+    sys.path.append("../..")
+    import Flamingo
 from Flamingo.structure import Detection2CLSLabel
+from glob import glob
+
 
 def draw_bounding_box(image, bbox, label, mode='xyxy'):
     if mode == 'xywh':
@@ -147,11 +156,188 @@ class ParticipantsProperty(Dataset):
         return data_info
         
 
-# if __name__ == '__main__':
-#     annFile = "/root/datasets/participant_property/participant_property/labels/val/valid_coco.json"
-#     imgs_dir = "/root/datasets/participant_property/participant_property/images"
-#     dataset = ParticipantsProperty(annFile=annFile, imgs_dir=imgs_dir)
-#     for data in dataset:
-#         print(data)
-#         cv2.imwrite("./test.jpg", data['img'])
-#         pdb.set_trace()
+""" 
+    anno_file: train.json
+"""
+class CachedParticipants(Dataset):
+    def __init__(self, data_dir, anno_file, tokenizer):
+        """ 
+            cache_dir:
+            |-- annotations
+            |   |-- train.json
+            |   |-- val.json
+            |-- pth
+            |   |-- category_name
+            |       |-- *.pth
+        """
+        self.data_dir = data_dir
+        assert data_dir.endswith('pth')
+
+        self.anno_file = anno_file
+        self.tokenizer = tokenizer
+        with open(anno_file, 'r') as f:
+            self.annotations = json.load(f)
+        """ 
+            annotations:
+            List[
+                dict(
+                    ori_img_name,
+                    file_name,
+                    category_name,
+                    attributes_name,
+                    bbox=[x, y, w, h],
+                    area,
+                )
+            ]
+        """
+        # set up labels; language model is expected to handle shifting
+        # encode media token id will add a token id of 2 before special token
+        self.media_token_id = self.tokenizer.encode("<image>")[-1]
+
+    def collater(self, samples):
+        """
+            sample: 
+                dict(
+                    vision_x=vision_x,
+                    category_name=category_name,
+                    attributes_name=attributes_name,
+                    # meta :
+                    ori_img_name=ori_img_name,
+                    file_name=file_name,
+                    bbox=bbox,
+                    area=area,
+                    pth_file=pth_file
+                )
+
+        """
+
+        imgs = []
+        text_labels = [] 
+        paths = []
+        input_ids = []
+        attention_mask = []
+        metas = []
+        for sample in samples:
+            # get vision label:
+            img = sample['vision_x']
+            assert len(img.shape) == 5, "img should be shape of [B, T, F, V, D] and T==1, F==1"
+            imgs.append(img)
+
+            # get text label:
+            category_name = sample['category_name']
+            attributes_name = sample['attributes_name']
+            label = attributes_name + " " + category_name
+            """
+                #TODO:
+                1) add prompt template (include special tokens) and eos 
+                2) remove padding tokens from loss
+
+                openflamingon remove loss before <image> token
+                
+                #TODO: add prompt training:
+                following this code will remove loss from <|endofchunk|> to <image>
+                    endofchunk_idxs = torch.where(labels[i] == endofchunk_token_id)[0]
+                    for endofchunk_idx in endofchunk_idxs:
+                        token_idx = endofchunk_idx + 1
+                        while (
+                            token_idx < labels.shape[1]
+                            and labels[i][token_idx] != media_token_id
+                        ):
+                            labels[i][token_idx] = -100
+                            token_idx += 1
+            """
+
+            # add text template
+            label = f"<image>Output:{label}<|endofchunk|>{self.tokenizer.eos_token}"
+            text_labels.append(label)
+
+            # get meta info:
+            pth_file = sample['pth_file']
+            ori_img_name = sample['ori_img_name']
+            bbox = sample['bbox']
+            meta = dict(
+                pth_file=pth_file,
+                ori_img_name=ori_img_name,
+                bbox=bbox,
+            )
+            metas.append(meta)
+
+            # max_length padding
+            """ 
+            max_length = 20 padding:
+                </s><image>Output:motorcycle electric vehicle 50-80 obstruction<|endofchunk|>\
+                    </s><pad><pad><pad><pad><pad>
+            """
+            batch_encoding = self.tokenizer(label,
+                                            max_length=20,
+                                            padding="max_length",
+                                            truncation=True,
+                                            return_tensors="pt")
+            input_ids.append(batch_encoding['input_ids'])
+            attention_mask.append(batch_encoding['attention_mask'])
+        input_ids = torch.cat(input_ids, dim=0)
+        attention_mask = torch.cat(attention_mask, dim=0)
+        assert len(input_ids.shape) == 2 and len(attention_mask.shape) == 2
+
+        """ 
+            generate labels:
+                1) hugginface transformer will handle shift logits loss
+                2) -100 means ignore in huggingface transformer model
+        """
+        labels = input_ids.clone()
+        # remove loss of media token and pad token
+        labels[labels == self.tokenizer.pad_token_id] = -100
+        labels[labels == self.media_token_id] = -100
+
+        imgs = torch.cat(imgs, dim=0)
+        result = dict(
+            meta=metas,
+            vision_x=imgs, 
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            labels=labels 
+        )
+        return result
+
+    def __len__(self):
+        return len(self.annotations)
+
+
+    def __getitem__(self, index):
+        """ 
+            unpack the annotation dict
+        """
+        data_info = self.annotations[index].copy()
+        ori_img_name = data_info['ori_img_name']
+        file_name = data_info['file_name']
+        category_name = data_info['category_name']
+        attributes_name = data_info['attributes_name']
+        bbox = data_info['bbox']
+        x, y, w, h = bbox
+        area = data_info['area']
+        
+        # get file name
+        category_dir = category_name.replace(' ', '_')
+        pth_file = os.path.join(self.data_dir, category_dir, file_name)
+        # get vision_x
+        vision_x = torch.load(pth_file)
+        return dict(
+            vision_x=vision_x,
+            category_name=category_name,
+            attributes_name=attributes_name,
+            # meta :
+            ori_img_name=ori_img_name,
+            file_name=file_name,
+            bbox=bbox,
+            area=area,
+            pth_file=pth_file
+        )
+
+if __name__ == '__main__':
+    annFile = "/root/datasets/participant_property/participant_property/labels/val/valid_coco.json"
+    imgs_dir = "/root/datasets/participant_property/participant_property/images"
+    dataset = ParticipantsProperty(annFile=annFile, imgs_dir=imgs_dir)
+    for data in dataset:
+        print(data)
+        # cv2.imwrite("./test.jpg", data['img'])
+        pdb.set_trace()

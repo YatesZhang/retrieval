@@ -113,6 +113,7 @@ class GTSRB(Dataset):
         vocabs = tokenizer(vocabs)['input_ids']
         vocabs = set(vocabs)
         return vocabs
+    
     def collater(self, samples):
         """
             sample: 
