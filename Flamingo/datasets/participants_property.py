@@ -311,7 +311,10 @@ class CachedParticipants(Dataset):
         ori_img_name = data_info['ori_img_name']
         file_name = data_info['file_name']
         category_name = data_info['category_name']
-        attributes_name = data_info['attributes_name']
+        if 'attributes_name' in data_info:
+            attributes_name = data_info['attributes_name']
+        else:
+            attributes_name = data_info['attributs_name']
         bbox = data_info['bbox']
         x, y, w, h = bbox
         area = data_info['area']

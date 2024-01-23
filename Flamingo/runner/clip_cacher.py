@@ -157,7 +157,7 @@ class CacheCLIPOutRunner(object):
                         ori_img_name=file_name,
                         file_name=save_name,
                         category_name=category_name,
-                        attributs_name=attributes_name,
+                        attributes_name=attributes_name,
                         bbox=bbox,
                         area=area
                     )
