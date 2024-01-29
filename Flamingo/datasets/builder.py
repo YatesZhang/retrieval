@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from .vqa_dataset import MyConcatDataset, VQADataset  # noqa: F401
 from .gtsrb import GTSRB
-from .participants_property import CachedParticipants
+from .participants_property import CachedParticipants, ParticipantsProperty
 
 
 def build_dataset(dataset_config, vis_processor, tokenizer):
@@ -32,8 +32,8 @@ def build_dataset(dataset_config, vis_processor, tokenizer):
             tokenizer=tokenizer,
             **_dataset_config
         )
-    elif dataset_type == "participants_property":
-        dataset = ParticipantsPropertyDataset(
+    elif dataset_type == "participants_property" or dataset_type == "ParticipantsProperty":
+        dataset = ParticipantsProperty(
             **_dataset_config
         )
     elif dataset_type == "CachedParticipants":

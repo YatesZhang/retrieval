@@ -309,21 +309,7 @@ class Runner(object):
             self.after_train_iter() 
         self.after_train_epoch()
         return 
-    
-    def test(self):
-        """ 
-            test phase 
-            how to do test in DeepSpeed ? 
-        """
-        self.before_test_epoch()
-        pass 
-        # with torch.no_grad():
-        #     for step, batch in enumerate(self.test_loader):
-        #         self.step = step 
-        #         output = self.batch_processor(model=self.model, batch=batch, mode='test') 
-        #         self.after_test_step()
-        # raise NotImplementedError
-        
+
 
 
 

@@ -123,3 +123,11 @@ def merge_detected(batch):
         attributes_names=attributes_names,
         metas=metas,
     )
+
+def collate_fn(batch):
+    """ 
+        collater function for clip dataloader
+        merge data info:
+    """
+    batch = [Detection2CLSLabel(data_info) for data_info in batch]
+    return merge_detected(batch)

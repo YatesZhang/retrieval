@@ -27,5 +27,22 @@ dataset_config = dict(
     data_dir='/root/datasets/cached_participants_property/pth',
     anno_file='/root/datasets/cached_participants_property/annotations/train.json',
 )
+
+model_config_test = dict(
+    clip_vision_encoder_path="ViT-L-14",
+    clip_vision_encoder_pretrained="openai",
+    lang_encoder_path=lang_encoder_path,
+    tokenizer_path=tokenizer_path,
+    cross_attn_every_n_layers=1,
+    cache_dir = cache_dir,
+    lora_tuning=False,
+    decoupled=False 
+)
+
+dataset_config_test = dict(
+    type='ParticipantsProperty',
+    annFile="/root/datasets/participant_property/labels/val/valid_coco.json",
+    imgs_dir="/root/datasets/participant_property/images"
+)
 workflows = [('train', 100), ('test', 1)]
 # padded_samples = self.tokenizer.pad(x,return_tensors="pt",padding="longest",truncation=True)

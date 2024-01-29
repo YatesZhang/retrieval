@@ -1,1 +1,1 @@
-from .Detection import Detection2CLSLabel
+from .Detection import Detection2CLSLabel, collate_fn

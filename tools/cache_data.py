@@ -3,6 +3,7 @@ try:
 except ModuleNotFoundError:
     import sys
     sys.path.append("..")
+    import Flamingo
 import pdb
 import os 
 from Flamingo.models.modeling_clip import get_clip_vision_encoder_and_processor
@@ -14,7 +15,7 @@ import torch.multiprocessing as mp
 import torch.distributed as dist
 """ 
 CUDA_VISIBLE_DEVICES=0,2,3,4,5,7 python cache_data.py
-
+CUDA_VISIBLE_DEVICES=7 python cache_data.py
 ps -ef | grep defunct | more
 ps -ef | grep python 
 fuser -v /dev/nvidia*
@@ -25,15 +26,20 @@ if __name__ == "__main__":
     vision_encoder.share_memory()
     batch_processor = CLIPBatchProcessor(vision_encoder=vision_encoder,
                                         image_processor=image_processor)
+    """ 
+        config:
+    """
+    
+    annFile = "/root/datasets/participant_property/labels/train/train_coco.json"
+    imgs_dir = "/root/datasets/participant_property/images"
+    cache_dir = "/root/datasets/participants_property_clip"
+    
     
     # create dataset:
-    annFile = "/root/datasets/participant_property/participant_property/labels/val/valid_coco.json"
-    imgs_dir = "/root/datasets/participant_property/participant_property/images"
     dataset = ParticipantsProperty(annFile=annFile, imgs_dir=imgs_dir)
-
+    pdb.set_trace()
     # create runner:
-    cache_dir = "/root/datasets/cached_participants_property"
-    batch_size_per_gpu=4
+    batch_size_per_gpu=16
     runner = Runner(
         batch_processor=batch_processor,
         cache_dir=cache_dir,

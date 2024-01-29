@@ -11,9 +11,12 @@ except ModuleNotFoundError:
     import sys
     sys.path.append("..")
     import Flamingo
+
+""" 
+    import your config file:
+"""
 # from Flamingo.config.baseline import dataset_config, model_config, workflows
 from Flamingo.config.participants_property import dataset_config, model_config, workflows
-# from getattr(Flamingo.config, config) import workflows
 # argparser:
 from Flamingo.utils import parse_args 
 # model:

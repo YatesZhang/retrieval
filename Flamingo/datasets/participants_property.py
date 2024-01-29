@@ -55,7 +55,7 @@ class ParticipantsProperty(Dataset):
             img=Image(1080, 1920, 3)
         )
     """
-    def __init__(self, annFile, imgs_dir):
+    def __init__(self, annFile, imgs_dir, max_len=-1):
         super(ParticipantsProperty, self).__init__()
         self.attributes = {1:'not obstructed',
                             2:'0-50 obstruction',
@@ -105,6 +105,11 @@ class ParticipantsProperty(Dataset):
         self.data_infos = []
         for k in images:
             self.data_infos.append(images[k])
+        data_len = len(self.data_infos)
+        while data_len > 50000:
+            print("reduce dataset(len={}) to {}".format(data_len, data_len // 10))
+            self.data_infos = self.data_infos[::10]
+            data_len = len(self.data_infos)
 
     def __repr__(self):
         return "ParticipantsProperty(num_imgs={}, \n  categories={})".format(

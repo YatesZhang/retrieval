@@ -5,6 +5,7 @@ from typing import Any
 import torch 
 from rich import print
 import numpy as np 
+import PIL
 from PIL import Image
 import pdb 
 from copy import deepcopy
@@ -43,7 +44,7 @@ def img_auto_cast(imgs):
 
 # from torch.cuda.amp import autocast
 class FlamingoBatchProcessor(object):
-    def __init__(self, tokenizer=None, cast_type=torch.bfloat16, num_beams=3, max_new_tokens=20):
+    def __init__(self, tokenizer=None, image_processor=None, cast_type=torch.bfloat16, num_beams=3, max_new_tokens=20):
         """ 
             training with gradient accumulation
             (integrated in DeepSpeed)
@@ -55,6 +56,7 @@ class FlamingoBatchProcessor(object):
         self.cast_type = cast_type
         self.num_beams = num_beams 
         self.max_new_tokens = max_new_tokens
+        self.image_processor = image_processor 
         # self.gradient_accumulation_steps = gradient_accumulation_steps
         pass 
 
@@ -88,41 +90,59 @@ class FlamingoBatchProcessor(object):
         loss = loss.sum() 
         # loss /= self.gradient_accumulation_steps 
         return loss
-     
-    # @torch.no_grad
-    def inference(self, model, batch, vocabs=None, **kwargs):
+    
+    def image_auto_cast(self, imgs):
         """ 
-            batch_size x num_media x num_frames x channels x height x width. 
-            B, N, F, C, H, W
-
-            batch['input_ids'] : [2, 151]
-            batch['labels']    : [2, 151]
+            return imgs of shape [B, C, H, W]
         """
-        device = self.get_device(model=model) 
-        images = batch["image"].to(device, dtype=self.cast_type, non_blocking=True)
-        if len(images.shape) == 4:
-            images = images.unsqueeze(1).unsqueeze(1)
-        
-        input_ids = batch['input_ids'].to(device, dtype=torch.long, non_blocking=True)
-        attention_mask = batch["attention_mask"].to(device, dtype=torch.long,  non_blocking=True)
-        # labels = batch["labels"].to(device, dtype=torch.long, non_blocking=True)
+        if isinstance(imgs, torch.Tensor):
+            while len(imgs.shape) < 4:
+                imgs = imgs.unsqueeze(0)
+            return imgs 
+        elif isinstance(imgs, PIL.Image.Image):
+            return self.image_processor(imgs).unsqueeze(0)    # shape: [1, C, H, W]
+        elif isinstance(imgs, list):
+            return torch.cat([self.image_auto_cast(img) for img in imgs], dim=0)
+        else:
+            raise TypeError
 
+    @torch.inference_mode()
+    def inference(self, model, batch, text_prompt="", num_beams=-1, max_new_tokens=-1, **kwargs):
+        device = self.get_device(model=model)
+        img = None
+        if isinstance(batch, dict):
+            for key in ['img', 'image', 'imgs', 'images']:
+                if key in batch:
+                    img = batch[key]
+                    break
+        else:
+            img = batch
+        img = self.image_auto_cast(img)    # shape: [B, C, H, W]
+        img = img.unsqueeze(1).unsqueeze(1)   # shape: [B, T=1, F=1, C, H, W]
+        
+        assert isinstance(img, torch.Tensor) and len(img.shape) == 6, "img should be a 6-dim tensor as [B, T, F. C, H, W]"
+        img = img.to(device, dtype=self.cast_type, non_blocking=True)
+        if text_prompt == "":
+            text_prompt = "<image>Output:"
+        elif not text_prompt.startswith("<image>"):
+            text_prompt = "<image>{}".format(text_prompt)
+        batch_size = img.shape[0]
+        batch_encoding = self.tokenizer(text_prompt, return_tensors="pt", padding=True)
+        input_ids = batch_encoding["input_ids"].to(device, dtype=torch.long, non_blocking=True).repeat(batch_size, 1)
+        attention_mask = batch_encoding["attention_mask"].to(device, dtype=torch.long, non_blocking=True).repeat(batch_size, 1)
         generated_text = model.generate(
-            vision_x=images,
+            vision_x=img,
             lang_x=input_ids,
             attention_mask=attention_mask,
-            max_new_tokens=self.max_new_tokens,
-            num_beams=self.num_beams,
+            max_new_tokens=max_new_tokens if max_new_tokens > 0 else self.max_new_tokens,
+            num_beams=num_beams if num_beams > 0 else self.num_beams,
             pad_token_id=self.tokenizer.eos_token_id
         )
         generated_text = generated_text.cpu()
-        print(type(generated_text))
-
-        result_text = [self.tokenizer.decode(text, skip_special_tokens=True) for text in generated_text]
-        return result_text
+        return self.tokenizer.batch_decode(generated_text, skip_special_tokens=True)
 
 
-    def __call__(self, model, batch, mode='train', **kwargs):
+    def __call__(self, model, batch, mode='test', **kwargs):
         """ 
             call the batch processor in training  
         """
@@ -136,14 +156,15 @@ class FlamingoBatchProcessor(object):
 
 
 class DecoupledFlamingoBatchProcessor(FlamingoBatchProcessor):
-    def __init__(self, tokenizer=None, cast_type=torch.bfloat16, num_beams=3, max_new_tokens=20):
+    def __init__(self, tokenizer=None, image_processor=None, cast_type=torch.bfloat16, num_beams=3, max_new_tokens=20):
         """ 
         
         """
         if isinstance(cast_type, str):
             assert cast_type in PRECISIONS
             cast_type = PRECISIONS[cast_type]
-        super().__init__(tokenizer=tokenizer, cast_type=cast_type, num_beams=num_beams, max_new_tokens=max_new_tokens)
+        super().__init__(tokenizer=tokenizer,
+         image_processor=image_processor, cast_type=cast_type, num_beams=num_beams, max_new_tokens=max_new_tokens)
 
     def process_batch(self, model, batch, few_shot_prompt=None, **kwargs):
         """ 
@@ -178,6 +199,7 @@ class DecoupledFlamingoBatchProcessor(FlamingoBatchProcessor):
             img = batch["img"] 
         else:
             img = batch
+
         assert isinstance(img, torch.Tensor) and len(img.shape) == 5, "img should be a 5-dim tensor as [B, T, F. V, D]"
         img = img.to(device, dtype=self.cast_type, non_blocking=True)
         if text_prompt == "":

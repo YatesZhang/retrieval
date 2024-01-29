@@ -36,3 +36,25 @@ def post_process(texts, cats=None):
         result.append(text)
          
     return result
+
+
+def post_process_participants(texts):
+    """ 
+        post process for participants property dataset
+    """
+    if isinstance(texts, list):
+        return [post_process_participants(text) for text in texts]
+    elif isinstance(texts, str):
+        texts = texts.split('\x7f')[0]
+        texts = texts.split('�')[0]
+        search_list = ['I\'m', 'guiAct',]
+        result = texts
+        for search_target in search_list:
+            match = re.search(search_target, result)
+            if match:
+                end_pos = match.start()
+                # print(f"search_target={search_target}, end_pos={end_pos}")
+                result = result[:end_pos - 1]
+        return result
+    else:
+        raise TypeError
