@@ -6,7 +6,7 @@
 
 from typing import Optional
 import torch 
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BertForMaskedLM
 import open_clip
 
 from open_flamingo import Flamingo
@@ -15,11 +15,13 @@ from open_flamingo.src.utils import extend_instance
 from bigmodelvis import Visualization
 from huggingface_hub import hf_hub_download
 from Flamingo.models.decoupled_flamingo import DecoupledFlamingo
+from Flamingo.models.modeling_bert import FlamingoForMaskedLM
+from peft import LoraConfig, get_peft_model
 import pdb 
 
 def get_tokenizer(
     tokenizer_path,
-    cache_dir="/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo",
+    cache_dir=None,
     use_local_files=False,
 ):
     """
@@ -33,13 +35,128 @@ def get_tokenizer(
     return text_tokenizer
 
 
+def get_clip_model_and_image_processor(
+    clip_vision_encoder_path,
+    pretrained='openai',
+    cache_dir=None):
+    """ 
+    get CLIP model and image processor
+    """
+    vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
+        clip_vision_encoder_path,    # "ViT-L-14"
+        pretrained=clip_vision_encoder_pretrained,    # "openai"
+        cache_dir=cache_dir,
+    )
+    # set the vision encoder to output the visual features
+    vision_encoder.visual.output_tokens = True
+    return vision_encoder, image_processor
+
+def get_flamingo_tokenizer(
+    tokenizer_path,
+    local_files_only=True,
+    trust_remote_code=True,
+    cache_dir=None):
+    """ 
+        get Flamingo tokenizer
+    """
+    text_tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_path,
+        local_files_only=use_local_files,
+        trust_remote_code=True,
+        cache_dir=cache_dir,
+    )
+    # add Flamingo special tokens to the tokenizer
+    text_tokenizer.add_special_tokens(
+        {"additional_special_tokens": ["<|endofchunk|>", "<image>"]}
+    )
+    if text_tokenizer.pad_token is None:
+        # Issue: GPT models don't have a pad token, which we use to
+        # modify labels for the loss.
+        text_tokenizer.add_special_tokens({"pad_token": "<PAD>"})
+    return text_tokenizer
+
+
+def get_flamingo_lm(
+    lang_encoder_path,
+    use_local_files=True,
+    cache_dir=None,
+    decoder_layers_attr_name=None
+):  
+    """ 
+        1) get bert style flamingo lm
+        2) get decoder-only flamingo lm
+    """
+    if 'bert' not in lang_encoder_path:
+        lang_encoder = AutoModelForCausalLM.from_pretrained(
+            lang_encoder_path,
+            local_files_only=use_local_files,
+            trust_remote_code=True,
+            cache_dir=cache_dir,
+        )
+    else:
+        lang_encoder = BertForMaskedLM.from_pretrained(lang_encoder_path)
+    
+    # hacks for MPT-1B, which doesn't have a get_input_embeddings method
+    if "mpt-1b-redpajama-200b" in lang_encoder_path:
+        class EmbeddingFnMixin:
+            def get_input_embeddings(self):
+                return self.transformer.wte
+            def set_input_embeddings(self, new_embeddings):
+                self.transformer.wte = new_embeddings
+        extend_instance(lang_encoder, EmbeddingFnMixin)
+
+    # convert LM to FlamingoLM
+    extend_instance(lang_encoder, FlamingoLMMixin)
+
+    if decoder_layers_attr_name is None:
+        decoder_layers_attr_name = _infer_decoder_layers_attr_name(lang_encoder)
+    lang_encoder.set_decoder_layers_attr_name(decoder_layers_attr_name)
+    lang_encoder.resize_token_embeddings(len(text_tokenizer))
+    return lang_encoder
+
+
+def create_flamingo(
+    vision_encoder=None,
+    lang_encoder=None,
+    eoc_token_id=-100,
+    media_token_id=-100,
+    vis_dim=768,
+    cross_attn_every_n_layers=1,
+    decoupled=False,
+    **flamingo_kwargs
+    ):
+    if not decoupled:
+        model = Flamingo(
+            vision_encoder=vision_encoder,
+            lang_encoder=lang_encoder,
+            eoc_token_id=eoc_token_id,
+            media_token_id=media_token_id,
+            vis_dim=vis_dim,
+            cross_attn_every_n_layers=cross_attn_every_n_layers,
+            **flamingo_kwargs)
+    else:
+        model = DecoupledFlamingo(
+            lang_encoder=lang_encoder,
+            eoc_token_id=eoc_token_id,
+            media_token_id=media_token_id,
+            vis_dim=vis_dim,
+            cross_attn_every_n_layers=cross_attn_every_n_layers,
+            **flamingo_kwargs
+        )
+    if 'bert' in lang_encoder.__class__.__name__:
+        # inject forward function for BERT-style LM
+        model.__class__ = type('FlamingoForMaskedLM', (FlamingoForMaskedLM, model.__class__), {})
+        model.init_layers_for_masked_lm()
+    return model
+
+
 def create_model_and_transforms(
     clip_vision_encoder_path="",
     clip_vision_encoder_pretrained="",
     lang_encoder_path="",
     tokenizer_path="",
     cross_attn_every_n_layers=1,
-    use_local_files=False,
+    use_local_files=True,
     decoder_layers_attr_name=None,
     freeze_lm_embeddings=False,
     cache_dir=None,
@@ -93,81 +210,41 @@ def create_model_and_transforms(
         print("[yellow]Flamingo will use single GPU or CPU[/yellow]")
     # print("gloabl_rank:", global_rank)
     print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create vision_encoder and image_processor from open_clip".format(global_rank))
-    vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
+    vision_encoder, image_processor = get_clip_model_and_image_processor(
         clip_vision_encoder_path,    # "ViT-L-14"
         pretrained=clip_vision_encoder_pretrained,    # "openai"
         cache_dir=cache_dir,
     )
-    # set the vision encoder to output the visual features
-    vision_encoder.visual.output_tokens = True
     print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create text_tokenizer".format(global_rank))
-    text_tokenizer = AutoTokenizer.from_pretrained(
+
+    text_tokenizer = get_flamingo_tokenizer(
         tokenizer_path,
         local_files_only=use_local_files,
         trust_remote_code=True,
         cache_dir=cache_dir,
     )
-    # add Flamingo special tokens to the tokenizer
-    text_tokenizer.add_special_tokens(
-        {"additional_special_tokens": ["<|endofchunk|>", "<image>"]}
-    )
-    if text_tokenizer.pad_token is None:
-        # Issue: GPT models don't have a pad token, which we use to
-        # modify labels for the loss.
-        text_tokenizer.add_special_tokens({"pad_token": "<PAD>"})
 
     print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create LLM from ".format(global_rank), lang_encoder_path)
-    lang_encoder = AutoModelForCausalLM.from_pretrained(
+    lang_encoder = get_flamingo_lm(
         lang_encoder_path,
-        local_files_only=use_local_files,
-        trust_remote_code=True,
+        use_local_files=use_local_files,
         cache_dir=cache_dir,
+        decoder_layers_attr_name=decoder_layers_attr_name
     )
-    
-    # import pdb 
-    # pdb.set_trace()
-    # hacks for MPT-1B, which doesn't have a get_input_embeddings method
-    if "mpt-1b-redpajama-200b" in lang_encoder_path:
-        class EmbeddingFnMixin:
-            def get_input_embeddings(self):
-                return self.transformer.wte
-            def set_input_embeddings(self, new_embeddings):
-                self.transformer.wte = new_embeddings
-
-        extend_instance(lang_encoder, EmbeddingFnMixin)
-
-    # convert LM to FlamingoLM
-    extend_instance(lang_encoder, FlamingoLMMixin)
-
-    if decoder_layers_attr_name is None:
-        decoder_layers_attr_name = _infer_decoder_layers_attr_name(lang_encoder)
-    lang_encoder.set_decoder_layers_attr_name(decoder_layers_attr_name)
-    lang_encoder.resize_token_embeddings(len(text_tokenizer))
 
     print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create Flamingo with cross_attn_every_n_layers=".format(global_rank),
            cross_attn_every_n_layers)
-    if not decoupled:
-        model = Flamingo(
-            vision_encoder,
-            lang_encoder,
-            text_tokenizer.encode("<|endofchunk|>")[-1],
-            text_tokenizer.encode("<image>")[-1],
-            vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"][
-                "width"
-            ],
-            cross_attn_every_n_layers=cross_attn_every_n_layers,
-            **flamingo_kwargs)
-    else:
-        model = DecoupledFlamingo(
-            lang_encoder,
-            text_tokenizer.encode("<|endofchunk|>")[-1],
-            text_tokenizer.encode("<image>")[-1],
-            vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"][
-                "width"
-            ],
-            cross_attn_every_n_layers=cross_attn_every_n_layers,
-            **flamingo_kwargs
-        )
+    
+    model = create_flamingo(
+        vision_encoder=None,
+        lang_encoder=None,
+        eoc_token_id=text_tokenizer.encode("<|endofchunk|>")[-1],
+        media_token_id=text_tokenizer.encode("<image>")[-1],
+        vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"]["width"],
+        cross_attn_every_n_layers=cross_attn_every_n_layers,
+        decoupled=decoupled,
+        **flamingo_kwargs)
+
     # load checkpoint:
     print("[[bold yellow]@rank{global_rank}[/bold yellow]|create Flamingo] load checkpoint.pt from huggingface ".format(global_rank=global_rank))
     checkpoint_path = hf_hub_download("openflamingo/OpenFlamingo-3B-vitl-mpt1b",
@@ -180,11 +257,8 @@ def create_model_and_transforms(
     # Freeze all parameters
     model.requires_grad_(False)
     assert sum(p.numel() for p in model.parameters() if p.requires_grad) == 0
-
     # --------------------------------------------------------------------------
-    from peft import LoraConfig, get_peft_model
     
-
     lora_target_modules=["Wqkv", "to_q", "to_kv", "to_out", "ff.1", "ff.3"]
     tuning_config = dict(
         r=16,
@@ -247,7 +321,7 @@ def _infer_decoder_layers_attr_name(model):
 
 
 __KNOWN_DECODER_LAYERS_ATTR_NAMES = {
-    # "bertlmheadmodel":"bert.encoder.layer",
+    "bertlmheadmodel":"bert.encoder.layer",
     "opt": "model.decoder.layers",
     "gptj": "transformer.h",
     "gpt-j": "transformer.h",

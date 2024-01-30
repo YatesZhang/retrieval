@@ -1,4 +1,4 @@
-lang_encoder_path = "facebook/opt-125m"
+lang_encoder_path = "bert-base-cased"
 tokenizer_path = lang_encoder_path
 
 # model_config = dict(

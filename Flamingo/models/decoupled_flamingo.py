@@ -25,6 +25,7 @@ class DecoupledFlamingo(nn.Module):
         vis_dim: int,
         cross_attn_every_n_layers: int = 1,
         gradient_checkpointing: bool = False,
+        vision_encoder=None
     ):
         """
         Decoupled Flamingo decouple the vision encoder from frozen CLIP

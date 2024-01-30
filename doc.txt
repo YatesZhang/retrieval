@@ -25,6 +25,8 @@ scp -r /folder/on/my/host/ yunzhi@172.18.19.13:/folder/on/target/machine/
 on 89:
 docker start mmdet_2d_zhaoqingsong_89
 
+pdb:
+b python_filename.py:20
 
 docker run -itd -v /root/shuyi_dataset:/cfsdata2 --gpus=all --shm-size=312g --net=host --name=shuyi_1 registry.baidubce.com/datahub/shuyi:1.0.0 /bin/bash
 
