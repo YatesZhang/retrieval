@@ -1,9 +1,9 @@
 import torch
 from torch import nn
 from open_flamingo import Flamingo
-from open_flamingo.flamingo_lm import FlamingoLayer
+from open_flamingo.src.flamingo_lm import FlamingoLayer
 from open_flamingo.src.utils import getattr_recursive, setattr_recursive
-
+import pdb 
 
 class FlamingoLayerForMaskedLM(FlamingoLayer):
     def __init__(
@@ -142,9 +142,14 @@ class FlamingoForMaskedLM(object):
 
         if clear_conditioned_layers:
             self.lang_encoder.clear_conditioned_layers()
-
         return output
+
     def init_layers_for_masked_lm(self):
-        pass 
+        """ 
+            inject forward pass of masked language model.
+        """
+        # pdb.set_trace()
+        for layer in self.lang_encoder._get_decoder_layers():
+            layer.__class__ = type('FlamingoLayerForMaskedLM', (FlamingoLayerForMaskedLM, layer.__class__), {})
     # def generate(*args, **kwargs):
     #     raise NotImplementedError

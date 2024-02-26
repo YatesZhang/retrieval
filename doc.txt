@@ -30,3 +30,4 @@ b python_filename.py:20
 
 docker run -itd -v /root/shuyi_dataset:/cfsdata2 --gpus=all --shm-size=312g --net=host --name=shuyi_1 registry.baidubce.com/datahub/shuyi:1.0.0 /bin/bash
 
+export PATH=/usr/local/cuda-11.8/bin:$PATH

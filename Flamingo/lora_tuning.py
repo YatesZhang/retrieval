@@ -44,7 +44,7 @@ def get_clip_model_and_image_processor(
     """
     vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
         clip_vision_encoder_path,    # "ViT-L-14"
-        pretrained=clip_vision_encoder_pretrained,    # "openai"
+        pretrained=pretrained,    # "openai"
         cache_dir=cache_dir,
     )
     # set the vision encoder to output the visual features
@@ -61,7 +61,7 @@ def get_flamingo_tokenizer(
     """
     text_tokenizer = AutoTokenizer.from_pretrained(
         tokenizer_path,
-        local_files_only=use_local_files,
+        local_files_only=local_files_only,
         trust_remote_code=True,
         cache_dir=cache_dir,
     )
@@ -78,6 +78,7 @@ def get_flamingo_tokenizer(
 
 def get_flamingo_lm(
     lang_encoder_path,
+    text_tokenizer=None,
     use_local_files=True,
     cache_dir=None,
     decoder_layers_attr_name=None
@@ -95,7 +96,7 @@ def get_flamingo_lm(
         )
     else:
         lang_encoder = BertForMaskedLM.from_pretrained(lang_encoder_path)
-    
+        # pdb.set_trace()
     # hacks for MPT-1B, which doesn't have a get_input_embeddings method
     if "mpt-1b-redpajama-200b" in lang_encoder_path:
         class EmbeddingFnMixin:
@@ -126,6 +127,7 @@ def create_flamingo(
     **flamingo_kwargs
     ):
     if not decoupled:
+        # pdb.set_trace()
         model = Flamingo(
             vision_encoder=vision_encoder,
             lang_encoder=lang_encoder,
@@ -143,7 +145,8 @@ def create_flamingo(
             cross_attn_every_n_layers=cross_attn_every_n_layers,
             **flamingo_kwargs
         )
-    if 'bert' in lang_encoder.__class__.__name__:
+    # pdb.set_trace()
+    if 'bert' in lang_encoder.__class__.__name__.lower():
         # inject forward function for BERT-style LM
         model.__class__ = type('FlamingoForMaskedLM', (FlamingoForMaskedLM, model.__class__), {})
         model.init_layers_for_masked_lm()
@@ -151,10 +154,10 @@ def create_flamingo(
 
 
 def create_model_and_transforms(
-    clip_vision_encoder_path="",
-    clip_vision_encoder_pretrained="",
-    lang_encoder_path="",
-    tokenizer_path="",
+    clip_vision_encoder_path="ViT-L-14",
+    clip_vision_encoder_pretrained="openai",
+    lang_encoder_path="bert-base-cased",
+    tokenizer_path="bert-base-cased",
     cross_attn_every_n_layers=1,
     use_local_files=True,
     decoder_layers_attr_name=None,
@@ -227,6 +230,7 @@ def create_model_and_transforms(
     print("[[bold yellow]@rank{}[/bold yellow]|create Flamingo] create LLM from ".format(global_rank), lang_encoder_path)
     lang_encoder = get_flamingo_lm(
         lang_encoder_path,
+        text_tokenizer=text_tokenizer,
         use_local_files=use_local_files,
         cache_dir=cache_dir,
         decoder_layers_attr_name=decoder_layers_attr_name
@@ -236,8 +240,8 @@ def create_model_and_transforms(
            cross_attn_every_n_layers)
     
     model = create_flamingo(
-        vision_encoder=None,
-        lang_encoder=None,
+        vision_encoder=vision_encoder,
+        lang_encoder=lang_encoder,
         eoc_token_id=text_tokenizer.encode("<|endofchunk|>")[-1],
         media_token_id=text_tokenizer.encode("<image>")[-1],
         vis_dim=open_clip.get_model_config(clip_vision_encoder_path)["vision_cfg"]["width"],
@@ -251,8 +255,7 @@ def create_model_and_transforms(
      "checkpoint.pt",
       cache_dir=cache_dir)
     # checkpoint_path = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo/checkpoint.pt"
-    model.load_state_dict(torch.load(checkpoint_path), strict=False)
-    
+    keys = model.load_state_dict(torch.load(checkpoint_path), strict=False)
     print("[[bold yellow]@rank{global_rank}[/bold yellow]|create Flamingo] Freeze all parameters ".format(global_rank=global_rank))
     # Freeze all parameters
     model.requires_grad_(False)
@@ -284,7 +287,7 @@ def create_model_and_transforms(
         print("[[bold yellow]@rank{global_rank}[/bold yellow]|set requires_grad] unfrozen perceiver layer".format(global_rank=global_rank))
         model.perceiver.requires_grad_(True)
         model.lang_encoder.gated_cross_attn_layers.requires_grad_(True)
-    if global_rank == 0:
+    if global_rank <= 0:
         Visualization(lang_encoder).structure_graph()
     
     # --------------------------------------------------------------------------
@@ -321,7 +324,7 @@ def _infer_decoder_layers_attr_name(model):
 
 
 __KNOWN_DECODER_LAYERS_ATTR_NAMES = {
-    "bertlmheadmodel":"bert.encoder.layer",
+    "bertformaskedlm": "bert.encoder.layer",
     "opt": "model.decoder.layers",
     "gptj": "transformer.h",
     "gpt-j": "transformer.h",
