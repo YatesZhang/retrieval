@@ -3,6 +3,11 @@ from PIL import Image
 import numpy as np 
 import pdb 
 import torch 
+try:
+    import Flamingo 
+except ModuleNotFoundError:
+    import sys
+    sys.path.append("..")
 from Flamingo.lora_tuning import create_model_and_transforms
 from Flamingo.config.baseline import model_config 
 from transformers import BatchEncoding 
@@ -19,7 +24,8 @@ if __name__ == "__main__":
     clip_vision_encoder_path="ViT-L-14"
     clip_vision_encoder_pretrained="openai"
     cross_attn_every_n_layers=1
-    cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
+    # cache_dir = "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
+    cache_dir = None 
     vision_encoder, _, image_processor = open_clip.create_model_and_transforms(
         clip_vision_encoder_path,    # "ViT-L-14"
         pretrained=clip_vision_encoder_pretrained,    # "openai"
@@ -28,7 +34,7 @@ if __name__ == "__main__":
     # set the vision encoder to output the visual features
     vision_encoder.visual.output_tokens = True
     
-    img = Image.open("/home/yunzhi/yunzhi/datasets/meta/1.png")
+    img = Image.open("../Flamingo/images/yellow_bus.jpg")
     # input: Pillow format image
     pdb.set_trace()
     img = image_processor(img)
@@ -41,6 +47,7 @@ if __name__ == "__main__":
         encoder(img)[0].shape: torch.Size([1, 768])
         encoder(img)[1].shape: torch.Size([1, 256, 1024])
     """
+    pdb.set_trace()
     with torch.no_grad():
         out = encoder(img)[1]
         out = out.unsqueeze(1).unsqueeze(1)
