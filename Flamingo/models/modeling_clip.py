@@ -11,7 +11,8 @@ import torch
 def get_clip_vision_encoder_and_processor(
     clip_vision_encoder_path="ViT-L-14",
     clip_vision_encoder_pretrained="openai",
-    cache_dir = None   
+    output_tokens=True,
+    cache_dir=None   
 ):
     """
         get clip vision encoder
@@ -22,7 +23,7 @@ def get_clip_vision_encoder_and_processor(
         pretrained=clip_vision_encoder_pretrained,    # "openai"
         cache_dir=cache_dir,
     )
-    vision_encoder.visual.output_tokens = True
+    vision_encoder.visual.output_tokens = output_tokens
     encoder = vision_encoder.visual 
     return encoder, image_processor 
 

@@ -31,15 +31,32 @@ if __name__ == "__main__":
         pretrained=clip_vision_encoder_pretrained,    # "openai"
         cache_dir=cache_dir,
     )
+    # pdb.set_trace()
     # set the vision encoder to output the visual features
     vision_encoder.visual.output_tokens = True
-    
+
     img = Image.open("../Flamingo/images/yellow_bus.jpg")
     # input: Pillow format image
-    pdb.set_trace()
     img = image_processor(img)
     img = img[None, ...].cuda()    # [1, C, H, W]
     encoder = vision_encoder.visual 
+    """ 
+        PEFT example:
+    """
+    from peft import LoraConfig, get_peft_model
+    encoder.task_type = "VL"
+    encoder.is_prompt_learning = False
+    config = LoraConfig(
+        r=16,
+        lora_alpha=16,
+        target_modules=["c_proj", "c_fc", "out_proj"],
+        lora_dropout=0.0,
+        bias="none",
+        modules_to_save=[],
+        task_type="VL",
+    )
+    encoder = get_peft_model(config, encoder)
+    pdb.set_trace()
     encoder = encoder.cuda()
     encoder.eval()
     """ 
