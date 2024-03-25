@@ -59,5 +59,24 @@ def pretty_print(data_list, color="yellow", line=False):
     return 
 
 
+def show_anns(anns):
+    if len(anns) == 0:
+        return
+    ax = plt.gca()
+    ax.set_autoscale_on(False)
 
+    img = np.ones(anns[0].shape[0], anns[0].shape[1], 4)
+    img[:,:,3] = 0
+    for ann in anns:
+        color_mask = np.concatenate([np.random.random(3), [0.35]])
+        img[ann] = color_mask
+    ax.imshow(img)
+
+
+def show_masks(img, masks):
+    plt.figure(figsize=(20,20))
+    plt.imshow(image)
+    show_anns(masks)
+    plt.axis('off')
+    plt.show() 
     
