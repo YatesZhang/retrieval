@@ -9,7 +9,9 @@ import torch.nn.functional as F
 import open_clip 
 import pdb 
 from typing import Tuple
-
+import sys 
+sys.path.append("..")
+from Flamingo.models.modeling_sam import SAMImageTransforms
 
 class InContextSAM(nn.Module):
     def __init__(
@@ -183,10 +185,12 @@ def create_model_and_transforms(
         prompt_encoder=prompt_encoder,
         sam_model=sam_model,
     )
-    return sam, clip_prossesor
+
+    sam_transforms = SAMImageTransforms(long_side_length=1024)
+    return sam, clip_prossesor, sam_transforms 
 
 if __name__ == "__main__":
-    sam, clip_prossesor = create_model_and_transforms(
+    sam, clip_prossesor, sam_transforms = create_model_and_transforms(
         clip_vision_encoder_path="ViT-L-14",
         clip_vision_encoder_pretrained="openai",
         clip_cache_dir=None, 

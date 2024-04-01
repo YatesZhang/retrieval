@@ -8,11 +8,15 @@ import numpy as np
 import os.path as osp
 import pdb 
 from tqdm import tqdm 
+from torch.utils.data import Dataset
 
-
-class COCOPrompter(object):
-    def __init__(self, annFile, img_dir, shot=5, mask_rate=0.25):
-        self.coco = COCO(annFile) 
+class COCOPrompter(Dataset):
+    def __init__(self, annFile, img_dir, shot=5, mask_rate=0.25, coco=None):
+        super().__init__()
+        if coco is not None:
+            self.coco = coco 
+        else:
+            self.coco = COCO(annFile) 
         self.shot = shot
         self.mask_rate =  mask_rate
         self.img_dir = img_dir
@@ -25,6 +29,9 @@ class COCOPrompter(object):
 
         self.catIds = catIds.copy()
     
+    def _len__(self):
+        return  len(self.catIds)
+
     def get_cat_mask(self, catIds):
         """ 
             mask some categories with mask_rate
@@ -132,7 +139,7 @@ class COCOPrompter(object):
             if len(instances) == self.shot:
                 break 
         return instances 
-
+    
 
     def get_n_shot_idx(self, catIds: list):
         """ 
@@ -190,7 +197,10 @@ class COCOPrompter(object):
             catMask=catMask,
             instances=instances
         )
-        
+    
+    def __getitem__(self, idx):
+        return self.prompt(catIds=idx)
+
 # prompter = COCOPrompter(annFile, img_dir=IMG_ROOT)
 
 ROOT = "/root/datasets/COCO" 
