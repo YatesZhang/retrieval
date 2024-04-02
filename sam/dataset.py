@@ -187,13 +187,11 @@ class DataIterator:
             category_ids_new.append(category_id)
             catMask_new.append(catMask)
             instances_new.append(instance)
-        # return category_ids
-                        
-
-
-                
-
-        return category_idsr
+        return dict(
+            category_ids=category_ids_new,
+            catMask=catMask_new,
+            instances=instances_new
+        )
 
     def __iter__(self):
         return self 
@@ -236,8 +234,8 @@ class DataIterator:
                 prompt = self.prompter[category_id]
                 prompts.append(prompt)
             
-                # if len(category_id) < self.cat_padding:
-                #     self.random_padding()
+                if len(category_id) < self.cat_padding:
+                    self.local_padding(category_id, prompts)
                 # catIds = prompt['catIds']
                 # catNames = prompt['catNames']
                 # catMask = prompt['catMask']
