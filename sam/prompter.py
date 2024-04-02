@@ -11,7 +11,7 @@ from tqdm import tqdm
 from torch.utils.data import Dataset
 
 class COCOPrompter(Dataset):
-    def __init__(self, annFile, img_dir, shot=5, mask_rate=0.25, coco=None):
+    def __init__(self, annFile, img_dir, shot=5, mask_rate=0.25, coco=None, transforms=None):
         super().__init__()
         if coco is not None:
             self.coco = coco 
@@ -28,7 +28,8 @@ class COCOPrompter(Dataset):
             self.start_idx[i] = 0
 
         self.catIds = catIds.copy()
-    
+        self.transforms = transforms
+
     def _len__(self):
         return  len(self.catIds)
 
@@ -135,6 +136,7 @@ class COCOPrompter(Dataset):
             x, y, w, h = bbox
             x, y, w, h = int(x), int(y), int(w), int(h)
             masked_instance = img[y:y+h, x:x+w]
+            masked_instance = Image.fromarray(masked_instance)
             instances.append(masked_instance)
             if len(instances) == self.shot:
                 break 
@@ -191,6 +193,9 @@ class COCOPrompter(Dataset):
         for catId, idx in zip(catIds, n_shot_idx):
             n_shot_instances = self.get_instances_from_idx(idx, catId)
             instances.append(n_shot_instances)
+        
+        if self.transforms is not None: 
+            instances = [self.transforms(instance) for instance in instances]
         return dict(
             catIds=catIds,
             catNames=self.coco.loadCats(catIds),

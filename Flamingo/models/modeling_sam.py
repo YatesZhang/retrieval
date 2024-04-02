@@ -62,6 +62,8 @@ class SAMImageTransforms(object):
     def process_image(self, image, target_size):
         """ 
             process a single image 
+            return: 
+                image: (1, 3, H, W)
         """
         # process image:
         image = np.array(resize(to_pil_image(image), target_size))
@@ -89,17 +91,20 @@ class SAMImageTransforms(object):
             - ndarray
             - list
             - list[list]
+
+            return: 
+                [mask: (1, H, W)]
         """
         if masks is None:
             return None 
         if target_size is None:
             target_size = get_preprocess_shape(*self.get_mask_shape(masks), long_side_length=1024)
         if isinstance(masks, np.ndarray):
-            mask = np.array(resize(to_pil_image(mask), target_size))
-            mask = torch.as_tensor(mask)
-            mask = mask.contiguous()[None, :, :]
-            mask = self.norm.pad(mask)    # only padding
-            return mask 
+            masks = np.array(resize(to_pil_image(masks), target_size))
+            masks = torch.as_tensor(masks)
+            masks = masks.contiguous()[None, :, :]
+            masks = self.norm.pad(masks)    # only padding
+            return masks 
         elif isinstance(masks, list):
             return [self.process_masks(mask, target_size) for mask in masks]
         else:
@@ -114,9 +119,9 @@ class SAMImageTransforms(object):
         assert isinstance(image, np.ndarray)
 
         if mask is not None: 
-            assert isinstance(mask, np.ndarray)
-            assert mask.shape[0] == image.shape[0] and mask.shape[1] == image.shape[1]
-            assert len(mask.shape) == 2
+            # import pdb 
+            # pdb.set_trace()
+            assert isinstance(mask, np.ndarray) or isinstance(mask, list)
 
         # get target size:
         target_size = get_preprocess_shape(image.shape[0], image.shape[1], long_side_length=1024)

@@ -53,7 +53,7 @@ import sys
 sys.path.append("..")
 from in_contex_sam import create_model_and_transforms
 from prompter import COCOPrompter
-from dataset import build_COCO
+from dataset import build_COCO, collate_fn_coco
 
 #######################################################################################
 def move_to_cuda(batch, device):
@@ -246,7 +246,7 @@ def main():
 
     # Prepare dataloader
     train_dataloader = plugin.prepare_dataloader(
-        train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True, collate_fn=beans_collator
+        train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True, collate_fn=collate_fn_coco
     )
     # eval_dataloader = plugin.prepare_dataloader(
     #     eval_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True, collate_fn=beans_collator
