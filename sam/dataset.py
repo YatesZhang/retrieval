@@ -13,6 +13,7 @@ sys.path.append('..')
 
 from Flamingo.models.modeling_sam import SAMImageTransforms
 from prompter import COCOPrompter
+import open_clip 
 
 def get_random_color():
     """ 
@@ -30,6 +31,7 @@ class PromptCOCO(Dataset):
             cocodetection: 
         """
         self.dataset = cocodetection  
+        self.coco = cocodetection.coco
         self.sam_transforms = sam_transforms
         
     def __len__(self):
@@ -73,7 +75,10 @@ class PromptCOCO(Dataset):
                     'segmentation', 'area', 'iscrowd', 'image_id', 'bbox', 'category_id', 'id'
                 }
             ]
+        bug:
+            target should not be empty!
         """
+
         image, target = deepcopy(self.dataset[idx])
         image = np.array(image)
         ori_img_size = image.shape[:2] 
@@ -91,7 +96,11 @@ class PromptCOCO(Dataset):
             # pdb.set_trace()
             image, masks = self.sam_transforms(image=image, mask=masks)
             if isinstance(masks, list):
-                masks = torch.cat(masks, dim=0)
+                try:
+                    masks = torch.cat(masks, dim=0) if len(masks) >0 else torch.empty((0, *image.shape[-2:]))
+                except RuntimeError:
+                    import pdb 
+                    pdb.set_trace()
                 assert masks.dim() == 3, "masks should be [N_{categories}, H, W] after sam_transforms"
         return dict(
             ori_img_size=ori_img_size,
@@ -133,7 +142,7 @@ def build_COCO(img_dir, anno_file, sam_transforms=None):
 
 
 class DataIterator:
-    def __init__(self, dataloader: PromptCOCO, prompter, cat_padding=4):
+    def __init__(self, dataloader, prompter, cat_padding=4):
         """ 
             pad to 4 categories for each image
         """
@@ -145,7 +154,7 @@ class DataIterator:
     def local_padding(self, category_ids, prompts):
         """ 
         use local prompt to pad category_ids
-            category_ids: List[List[catid]]
+            category_ids: List[catid]
             prompts: List[prompt]
                 - prompt:
                     dict(
@@ -155,43 +164,6 @@ class DataIterator:
                         instances=List[torch_instance]
                     )
         """
-        category_ids_new = []
-        catMask_new = []
-        instances_new = []
-        for i in range(len(category_ids)):
-            # pad prompt i
-            category_id = category_ids[i].copy()
-            instance = prompts[i]['instances'].clone()
-            catMask = prompts[i]['catMask'].copy()
-            while len(category_id) < self.cat_padding:
-                # search prompts[j] (j != i): 
-                for j in range(len(prompts)):
-                    if i == j: continue
-                    prompt = prompts[j]
-                    catIds = prompt['catIds']    # catIds: List[catid]
-                    for k, catId in enumerate(catIds):
-                        if catId not in category_id:
-                            # do padding:
-                            category_id.append(catId)
-                            catMask.append(0)
-                            # instance: from prompts_{i}
-                            # prompt:   from prompts_{j}
-                            instance = torch.cat([instance, prompt['instances'][k][None, :, :]], dim=0)
-                        if len(category_id) >= self.cat_padding: break
-                    if len(category_id) >= self.cat_padding: break
-                if len(category_id) < self.cat_padding:
-                    # no more catId to append, accept:
-                    # TODO: retrieve
-                    break 
-
-            category_ids_new.append(category_id)
-            catMask_new.append(catMask)
-            instances_new.append(instance)
-        return dict(
-            category_ids=category_ids_new,
-            catMask=catMask_new,
-            instances=instances_new
-        )
 
     def __iter__(self):
         return self 
@@ -224,24 +196,105 @@ class DataIterator:
             
             # check data
             B = len(category_ids)
-            assert B == len(masks) and B = images.shape[0] and B == len(ori_img_sizes)
+            assert B == len(masks) and B == images.shape[0] and B == len(ori_img_sizes)
+
+            for i in range(B):
+                masks[i] = masks[i][:self.cat_padding]
+                category_ids[i] = category_ids[i][:self.cat_padding]
+                ori_img_sizes[i] = ori_img_sizes[i][:self.cat_padding]
 
             prompts = []
             for i in range(B):
-                category_id = category_ids[i]
-
                 # retrieve prompt:
+                category_id = category_ids[i]
                 prompt = self.prompter[category_id]
                 prompts.append(prompt)
             
-                if len(category_id) < self.cat_padding:
-                    self.local_padding(category_id, prompts)
-                # catIds = prompt['catIds']
-                # catNames = prompt['catNames']
-                # catMask = prompt['catMask']
-                # instances = prompt['instances']
+            for i in range(B - 1):
+                prompt_i = prompts[i]
+                for j in range(i+1, B):
+                    prompt_j = prompts[j]
+                    # merge prompt_i and prompt_j
+                    catIds_i = prompt_i['catIds']
+                    catNames_i = prompt_i['catNames']
+                    catMask_i = prompt_i['catMask']
+                    instances_i = prompt_i['instances']
 
+                    catIds_j = prompt_j['catIds']
+                    catNames_j = prompt_j['catNames']
+                    catMask_j = prompt_j['catMask']
+                    instances_j = prompt_j['instances']
+                    if len(catIds_i) >= self.cat_padding and len(catIds_j) >= self.cat_padding:
+                        continue 
+                    if len(catIds_j) < self.cat_padding:
+                        # pad cat j
+                        for k in range(len(catIds_i)):
+                            catId_i = catIds_i[k]
+                            if catId_i not in catIds_j:
+                                # merge cat id:
+                                catIds_j.append(catId_i)
+                                # merge cat name:
+                                catNames_j.append(catNames_i[k])
+                                # add cat mask:
+                                catMask_j.append(0)
+                                instances_j.append(instances_i[k])
+                                masks[j] = torch.cat([masks[j], torch.zeros((1, *masks[j].shape[-2:]))], dim=0)
+                            if len(catIds_j) >= self.cat_padding:
+                                # stop padding
+                                break
+                    if len(catIds_i) < self.cat_padding:
+                        # pad cat i
+                        for k in range(len(catIds_j)):
+                            catId_j = catIds_j[k]
+                            if catId_j not in catIds_i:
+                                # merge cat id:
+                                catIds_i.append(catId_j)
+                                # merge cat name:
+                                catNames_i.append(catNames_j[k])
+                                # add cat mask:
+                                catMask_i.append(0)
+                                instances_i.append(instances_j[k])
+                                masks[i] = torch.cat([masks[i], torch.zeros((1, *masks[i].shape[-2:]))], dim=0)
+                            if len(catIds_i) >= self.cat_padding:
+                                # stop padding
+                                break
+                    prompts[i] = dict(
+                        catIds=catIds_i,
+                        catNames=catNames_i,
+                        catMask=catMask_i,
+                        instances=instances_i
+                    )
+                    prompts[j] = dict(
+                        catIds=catIds_j,
+                        catNames=catNames_j,
+                        catMask=catMask_j,
+                        instances=instances_j
+                    )
+            
+            # process mask:
+            # import pdb 
+            # pdb.set_trace()
+            for i in range(B):
+                prompt = prompts[i]
+                catMask = prompt['catMask']
+                for j, cat_mask in enumerate(catMask):
+                    if cat_mask == 0:
+                        mask_i = masks[i]    # shape: [N_{categories}, H, W]
+                        mask_i[j] = 0
+                        masks[i] = mask_i    # 防止弱引用
+                
+            # merge return value:
+            labels = [prompt['catIds'] for prompt in prompts]
+            names = [prompt['catNames'] for prompt in prompts]
+            prompts = [prompt['instances'] for prompt in prompts]
 
+            return dict(
+                images=images,
+                labels=labels,
+                masks=masks,
+                names=names,
+                prompts=prompts
+            )
 
         except StopIteration:
             self.iter = iter(self.dataloader)
@@ -260,18 +313,40 @@ if __name__ == '__main__':
     
     transforms = SAMImageTransforms(long_side_length=1024)
     dataset = build_COCO(IMAGES_PATH, ANNOTATIONS_PATH, sam_transforms=transforms)
-    dataloader = DataLoader(dataset, batch_size=4, collate_fn=collate_fn_coco)
+    dataloader = DataLoader(dataset, batch_size=4, collate_fn=collate_fn_coco, num_workers=4)
+
+    print("create image processor for clip")
+    _, _, image_processor = open_clip.create_model_and_transforms(
+        "ViT-L-14",    # "ViT-L-14"
+        pretrained="openai",    # "openai"
+        cache_dir=None,
+    )
+
+    print("create prompter")
+    prompter = COCOPrompter(annFile=ANNOTATIONS_PATH,
+                            img_dir=IMAGES_PATH,
+                            shot=5,
+                            mask_rate=0.25,
+                            coco=dataset.coco,
+                            transforms=image_processor)
+
+    data_iter = DataIterator(dataloader, prompter, cat_padding=4)
     i = 0
-    for epoch in range(50):
-        for data in tqdm(dataloader):
-            i += 1
-            if i >= 100:
-                break 
-            print(data['images'].shape)
-            print([mask.shape for mask in data['masks']])
-            print(data['category_ids'])
-            print(data['ori_img_sizes'])
+    for data in tqdm(data_iter):
+        i += 1
+        if i == 10:
             pdb.set_trace()
-            print()
-        if i >= 100:
-            break 
+    # i = 0
+    # for epoch in range(50):
+    #     for data in tqdm(dataloader):
+    #         i += 1
+    #         if i >= 100:
+    #             break 
+    #         print(data['images'].shape)
+    #         print([mask.shape for mask in data['masks']])
+    #         print(data['category_ids'])
+    #         print(data['ori_img_sizes'])
+    #         pdb.set_trace()
+    #         print()
+    #     if i >= 100:
+    #         break 

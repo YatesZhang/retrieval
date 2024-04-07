@@ -1,30 +1,5 @@
 """ 
-    to do: 
-    @dataset: def collate_fn_coco
-    @this: 
-        dataloader = iter(dataloader)
-        prompter = cocoprompter
-
-        merge dataload & prompter to one iter
-
-        yield from dataloader & prompter
-
-    class DataLoaderRetrieverIterator:
-        def __init__(self, data_loader, retriever):
-            self.data_loader = data_loader
-            self.retriever = retriever
-
-        def __iter__(self):
-            return self
-
-        def __next__(self):
-            try:
-                data = next(self.data_loader)
-                result = self.retriever.retrieve(data)
-                return result
-            except StopIteration:
-                raise StopIteration
-
+ train script
 """
 from typing import Any, Callable, Iterator
 

@@ -1,3 +1,4 @@
+import torch
 import pycocotools
 from pycocotools.coco import COCO
 from copy import deepcopy
@@ -193,9 +194,11 @@ class COCOPrompter(Dataset):
         for catId, idx in zip(catIds, n_shot_idx):
             n_shot_instances = self.get_instances_from_idx(idx, catId)
             instances.append(n_shot_instances)
-        
+        # import pdb 
+        # pdb.set_trace()
         if self.transforms is not None: 
-            instances = [self.transforms(instance) for instance in instances]
+            instances = [torch.cat([self.transforms(i).unsqueeze(0) for i in instance],
+             dim=0) for instance in instances]
         return dict(
             catIds=catIds,
             catNames=self.coco.loadCats(catIds),

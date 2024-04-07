@@ -8,6 +8,7 @@ import torch
     on .13:
     "/home/yunzhi/yunzhi/yunzhi/checkpoints/flamingo"
 """
+
 def get_clip_vision_encoder_and_processor(
     clip_vision_encoder_path="ViT-L-14",
     clip_vision_encoder_pretrained="openai",
